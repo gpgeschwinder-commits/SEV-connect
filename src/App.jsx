@@ -37,6 +37,7 @@ const DIENSTPLAENE = {
   "Gerhard Geschwinder": {
     dienst:"0472407", datum:"07.05.2026", dienstbeginn:"04:46", dienstende:"15:12",
     anfahrt: { ziel:"München Ostbahnhof Friedenstraße", lat:48.1276, lng:11.6077 },
+    rueckfahrt: { ziel:"Betriebshof München Zentrale" },
     touren:[
       { id:"GG1", dep:"05:16", arr:"06:10", vonId:1, nachId:9,
         stops:[{id:1,t:"05:16"},{id:2,t:"05:19"},{id:3,t:"05:22"},{id:4,t:"05:34"},{id:5,t:"05:45",warn:"⚠️ Maifest: Münchner Str. nutzen"},{id:6,t:"05:51"},{id:7,t:"05:55"},{id:8,t:"05:59"},{id:9,t:"06:10"}]},
@@ -59,6 +60,7 @@ const DIENSTPLAENE = {
   "Sebastian Deuschel": {
     dienst:"0472408", datum:"07.05.2026", dienstbeginn:"14:28", dienstende:"00:16",
     anfahrt: { ziel:"München Berg am Laim", lat:48.1272, lng:11.6390 },
+    rueckfahrt: { ziel:"Betriebshof München Zentrale" },
     touren:[
       { id:"SD1", dep:"14:58", arr:"15:46", vonId:3, nachId:9,
         stops:[{id:3,t:"14:58"},{id:4,t:"15:10"},{id:5,t:"15:21",warn:"⚠️ 07.05: Umleitung Baustelle MS"},{id:6,t:"15:27"},{id:7,t:"15:31"},{id:8,t:"15:35"},{id:9,t:"15:46"}]},
@@ -410,7 +412,7 @@ function FahrerApp({ driver, onLogout }) {
         {/* Anfahrt */}
         {plan?.anfahrt && (
           <button onClick={()=>setPhase("anfahrt")} style={{width:"100%",display:"flex",alignItems:"center",gap:14,background:anfahrtDone?"rgba(46,204,113,.06)":"rgba(232,200,74,.08)",border:anfahrtDone?"1px solid rgba(46,204,113,.2)":"2px solid rgba(232,200,74,.3)",borderRadius:16,padding:"16px 18px",cursor:"pointer",marginBottom:10,transition:"all .15s",textAlign:"left"}}>
-            <div style={{width:36,height:36,borderRadius:"50%",background:anfahrtDone?"#2ECC71":"#E8C84A",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>
+            <div style={{width:36,height:36,borderRadius:"50%",background:anfahrtDone?"#2ECC71":"#E8C84A",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0,color:"#fff"}}>
               {anfahrtDone?"✓":"▶"}
             </div>
             <div style={{flex:1}}>
@@ -439,6 +441,18 @@ function FahrerApp({ driver, onLogout }) {
             </button>
           );
         })}
+
+        {/* Rückfahrt */}
+        {plan?.rueckfahrt && (
+          <div style={{width:"100%",display:"flex",alignItems:"center",gap:14,background:"rgba(52,152,219,.06)",border:"1px solid rgba(52,152,219,.2)",borderRadius:16,padding:"16px 18px",marginBottom:10}}>
+            <div style={{width:36,height:36,borderRadius:"50%",background:"#3498DB",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0,color:"#fff"}}>🏁</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:12,color:"#3498DB",fontWeight:800,textTransform:"uppercase",letterSpacing:1}}>Rückfahrt</div>
+              <div style={{fontSize:15,color:"#fff",fontWeight:700,marginTop:2}}>{plan.rueckfahrt.ziel}</div>
+            </div>
+            <div style={{fontSize:12,color:"#555"}}>bis {plan.dienstende} Uhr</div>
+          </div>
+        )}
 
         {/* Dienstende */}
         {plan?.dienstende && (
