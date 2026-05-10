@@ -35,30 +35,30 @@ const STOPS = [
 
 const DIENSTPLAENE = {
   "Gerhard Geschwinder": {
-    dienst:"0472607", datum:"09.05.2026", dienstbeginn:"04:46", dienstende:"15:18",
+    dienst:"0472207", datum:"11.05.2026", dienstbeginn:"04:46", dienstende:"13:52",
     anfahrt: { ziel:"München Ostbahnhof Friedenstraße", lat:48.1276, lng:11.6077 },
     rueckfahrt: { ziel:"Betriebshof München Zentrale" },
     touren:[
       { id:"GG1", dep:"05:16", arr:"06:10", vonId:1, nachId:9,
         stops:[{id:1,t:"05:16"},{id:2,t:"05:19"},{id:3,t:"05:22"},{id:4,t:"05:34"},{id:5,t:"05:45"},{id:6,t:"05:51"},{id:7,t:"05:55"},{id:8,t:"05:59"},{id:9,t:"06:10"}]},
-      { id:"GG2", dep:"06:14", arr:"07:08", vonId:9, nachId:1,
-        stops:[{id:9,t:"06:14"},{id:8,t:"06:25"},{id:7,t:"06:29"},{id:6,t:"06:33"},{id:5,t:"06:39"},{id:4,t:"06:50"},{id:3,t:"07:02"},{id:2,t:"07:05"},{id:1,t:"07:08"}]},
-      { id:"GG3", dep:"07:12", arr:"08:06", vonId:1, nachId:9,
-        stops:[{id:1,t:"07:12"},{id:2,t:"07:15"},{id:3,t:"07:18"},{id:4,t:"07:30"},{id:5,t:"07:41"},{id:6,t:"07:47"},{id:7,t:"07:51"},{id:8,t:"07:55"},{id:9,t:"08:06"}]},
-      { id:"GG4", dep:"08:14", arr:"09:08", vonId:9, nachId:1,
-        stops:[{id:9,t:"08:14"},{id:8,t:"08:25"},{id:7,t:"08:29"},{id:6,t:"08:33"},{id:5,t:"08:39"},{id:4,t:"08:50"},{id:3,t:"09:02"},{id:2,t:"09:05"},{id:1,t:"09:08"}]},
-      { id:"GG5", dep:"10:12", arr:"11:06", vonId:1, nachId:9,
-        stops:[{id:1,t:"10:12"},{id:2,t:"10:15"},{id:3,t:"10:18"},{id:4,t:"10:30"},{id:5,t:"10:41"},{id:6,t:"10:47"},{id:7,t:"10:51"},{id:8,t:"10:55"},{id:9,t:"11:06"}]},
-      { id:"GG6", dep:"11:14", arr:"12:08", vonId:9, nachId:1,
-        stops:[{id:9,t:"11:14"},{id:8,t:"11:25"},{id:7,t:"11:29"},{id:6,t:"11:33"},{id:5,t:"11:39"},{id:4,t:"11:50"},{id:3,t:"12:02"},{id:2,t:"12:05"},{id:1,t:"12:08"}]},
-      { id:"GG7", dep:"12:52", arr:"13:46", vonId:1, nachId:9,
-        stops:[{id:1,t:"12:52"},{id:2,t:"12:55"},{id:3,t:"12:58"},{id:4,t:"13:10"},{id:5,t:"13:21"},{id:6,t:"13:27"},{id:7,t:"13:31"},{id:8,t:"13:35"},{id:9,t:"13:46"}]},
-      { id:"GG8", dep:"13:54", arr:"14:48", vonId:9, nachId:1,
-        stops:[{id:9,t:"13:54"},{id:8,t:"14:05"},{id:7,t:"14:09"},{id:6,t:"14:13"},{id:5,t:"14:19"},{id:4,t:"14:30"},{id:3,t:"14:42"},{id:2,t:"14:45"},{id:1,t:"14:48"}]},
+      { id:"GG2", dep:"06:14", arr:"07:02", vonId:9, nachId:3,
+        stops:[{id:9,t:"06:14"},{id:8,t:"06:25"},{id:7,t:"06:29"},{id:6,t:"06:33"},{id:5,t:"06:39"},{id:4,t:"06:50"},{id:3,t:"07:02"}]},
+      { id:"GG3", dep:"07:08", arr:"07:56", vonId:3, nachId:9,
+        stops:[{id:3,t:"07:08"},{id:4,t:"07:20"},{id:5,t:"07:31"},{id:6,t:"07:37"},{id:7,t:"07:41"},{id:8,t:"07:45"},{id:9,t:"07:56"}]},
+      { id:"GG4", dep:"08:04", arr:"08:52", vonId:9, nachId:3,
+        stops:[{id:9,t:"08:04"},{id:8,t:"08:15"},{id:7,t:"08:19"},{id:6,t:"08:23"},{id:5,t:"08:29"},{id:4,t:"08:40"},{id:3,t:"08:52"}]},
+      { id:"GG5", dep:"09:48", arr:"10:36", vonId:3, nachId:9,
+        stops:[{id:3,t:"09:48"},{id:4,t:"10:00"},{id:5,t:"10:11"},{id:6,t:"10:17"},{id:7,t:"10:21"},{id:8,t:"10:25"},{id:9,t:"10:36"}]},
+      { id:"GG6", dep:"10:44", arr:"11:32", vonId:9, nachId:3,
+        stops:[{id:9,t:"10:44"},{id:8,t:"10:55"},{id:7,t:"10:59"},{id:6,t:"11:03"},{id:5,t:"11:09"},{id:4,t:"11:20"},{id:3,t:"11:32"}]},
+      { id:"GG7", dep:"11:38", arr:"12:26", vonId:3, nachId:9,
+        stops:[{id:3,t:"11:38"},{id:4,t:"11:50"},{id:5,t:"12:01"},{id:6,t:"12:07"},{id:7,t:"12:11"},{id:8,t:"12:15"},{id:9,t:"12:26"}]},
+      { id:"GG8", dep:"12:34", arr:"13:22", vonId:9, nachId:3,
+        stops:[{id:9,t:"12:34"},{id:8,t:"12:45"},{id:7,t:"12:49"},{id:6,t:"12:53"},{id:5,t:"12:59"},{id:4,t:"13:10"},{id:3,t:"13:22"}]},
     ]
   },
   "Sebastian Deuschel": {
-    dienst:"0472408", datum:"07.05.2026", dienstbeginn:"14:28", dienstende:"00:16",
+    dienst:"0472408", datum:"11.05.2026", dienstbeginn:"14:28", dienstende:"00:16",
     anfahrt: { ziel:"München Berg am Laim", lat:48.1272, lng:11.6390 },
     rueckfahrt: { ziel:"Betriebshof München Zentrale" },
     touren:[
@@ -73,14 +73,12 @@ const DIENSTPLAENE = {
     ]
   },
   "Elisabeth Bachmeier": {
-    dienst:"—", datum:"07.05.2026", dienstbeginn:"—", dienstende:"—",
+    dienst:"—", datum:"11.05.2026", dienstbeginn:"—", dienstende:"—",
     anfahrt: null, touren:[]
   },
 };
 
 const SONDERMELDUNGEN = [
-  { id:1, type:"warn", haltId:5, title:"⚠️ Maifest Feldkirchen", text:"Haltestelle Feldkirchen Bahnhof NICHT erreichbar. 'Münchner Straße' (beidseitig) nutzen.", isNew:false },
-  { id:2, type:"warn", haltId:9, title:"⚠️ Baustelle Markt Schwaben", text:"07.05. 08:30–16:30 Uhr: Herzog-Ludwig-Str. gesperrt. Umleitung: Finsingstr. → Am Roßacker → Münsterstr.", isNew:true },
   { id:3, type:"info", haltId:null, title:"🅿️ Pausenplatz", text:"Zamilastraße, Berg am Laim.", isNew:false },
 ];
 
@@ -140,7 +138,7 @@ function Login({ onDriver, onDispatch }) {
       <div style={{textAlign:"center",marginBottom:48,animation:"fadeUp .5s ease"}}>
         <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:64,color:"#E8C84A",letterSpacing:6,lineHeight:1}}>SEV CONNECT</div>
         <div style={{fontSize:14,color:"#E74C3C",letterSpacing:2,marginTop:8,fontWeight:800,textTransform:"uppercase"}}>S2 · Berg am Laim ↔ Markt Schwaben</div>
-        <div style={{fontSize:12,color:"#555",marginTop:6}}>07.05.2026 · Piloteinsatz · RVO / DB</div>
+        <div style={{fontSize:12,color:"#555",marginTop:6}}>11.05.2026 · Piloteinsatz · RVO / DB</div>
       </div>
       {!mode?(
         <div style={{width:"100%",maxWidth:420,display:"flex",flexDirection:"column",gap:14}}>
@@ -530,7 +528,7 @@ function DisponentApp({ onLogout }) {
       <div style={{background:"linear-gradient(135deg,#1a2a4a,#0d1b33)",padding:"14px 24px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div>
           <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:26,color:"#E8C84A",letterSpacing:3}}>SEV CONNECT · DISPONENT</div>
-          <div style={{fontSize:11,color:"#4a6fa5",letterSpacing:1,textTransform:"uppercase"}}>S2 · Berg am Laim ↔ Markt Schwaben · 07.05.2026</div>
+          <div style={{fontSize:11,color:"#4a6fa5",letterSpacing:1,textTransform:"uppercase"}}>S2 · Berg am Laim ↔ Markt Schwaben · 11.05.2026</div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:16}}>
           <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:24,color:"#E8C84A",letterSpacing:3}}>{time.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}</div>
@@ -580,7 +578,7 @@ function DisponentApp({ onLogout }) {
 
         {tab==="touren"&&(
           <div>
-            <div style={{fontSize:13,color:"#999",textTransform:"uppercase",letterSpacing:1,marginBottom:16}}>Fahraufträge heute — 07.05.2026</div>
+            <div style={{fontSize:13,color:"#999",textTransform:"uppercase",letterSpacing:1,marginBottom:16}}>Fahraufträge heute — 11.05.2026</div>
             {Object.entries(DIENSTPLAENE).map(([name,plan])=>(
               <div key={name} style={{background:"#fff",border:"1px solid #e8ecf0",borderRadius:14,padding:"14px 18px",marginBottom:16}}>
                 <div style={{fontWeight:800,fontSize:15,marginBottom:8,color:"#1a2a4a"}}>{name} · {plan.dienst}</div>
