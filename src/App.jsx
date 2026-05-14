@@ -118,7 +118,14 @@ const getDelayText = (min) => {
 };
 
 const callLS = () => window.open(`tel:${LEITSTELLE_TEL}`,"_blank");
-window.location.href = `https://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`
+const openMaps = (lat,lng,name) => {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const url = isIOS
+    ? `maps://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`
+    : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+  window.open(url, "_blank");
+};
+
 // ── LEITSTELLE BUTTON — immer sichtbar ─────────────────────────
 const LSButton = () => (
   <button onClick={callLS} style={{position:"fixed",bottom:24,right:20,width:56,height:56,borderRadius:"50%",background:"#E74C3C",border:"none",color:"#fff",fontSize:22,cursor:"pointer",boxShadow:"0 4px 20px rgba(231,76,60,.5)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}}>
