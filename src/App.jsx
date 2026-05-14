@@ -118,7 +118,7 @@ const getDelayText = (min) => {
 };
 
 const callLS = () => window.open(`tel:${LEITSTELLE_TEL}`,"_blank");
-const openMaps = (lat,lng,name) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`,"_blank");
+const openMaps = (lat,lng,name) => { window.location.href = `https://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`; };
 
 // ── LEITSTELLE BUTTON — immer sichtbar ─────────────────────────
 const LSButton = () => (
