@@ -35,7 +35,7 @@ const STOPS = [
 
 const DIENSTPLAENE = {
   "Gerhard Geschwinder": {
-    dienst:"0472207", datum:"11.05.2026", dienstbeginn:"04:46", dienstende:"13:52",
+    dienst:"0472207", datum:"15.05.2026", dienstbeginn:"04:46", dienstende:"13:52",
     anfahrt: { ziel:"München Ostbahnhof Friedenstraße", lat:48.1276, lng:11.6077 },
     rueckfahrt: { ziel:"Betriebshof München Zentrale" },
     touren:[
@@ -58,7 +58,7 @@ const DIENSTPLAENE = {
     ]
   },
   "Sebastian Deuschel": {
-    dienst:"0472408", datum:"11.05.2026", dienstbeginn:"14:28", dienstende:"00:16",
+    dienst:"0472408", datum:"15.05.2026", dienstbeginn:"14:28", dienstende:"00:16",
     anfahrt: { ziel:"München Berg am Laim", lat:48.1272, lng:11.6390 },
     rueckfahrt: { ziel:"Betriebshof München Zentrale" },
     touren:[
@@ -73,7 +73,7 @@ const DIENSTPLAENE = {
     ]
   },
   "Elisabeth Bachmeier": {
-    dienst:"—", datum:"11.05.2026", dienstbeginn:"—", dienstende:"—",
+    dienst:"—", datum:"15.05.2026", dienstbeginn:"—", dienstende:"—",
     anfahrt: null, touren:[]
   },
 };
@@ -138,7 +138,7 @@ function Login({ onDriver, onDispatch }) {
       <div style={{textAlign:"center",marginBottom:48,animation:"fadeUp .5s ease"}}>
         <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:64,color:"#E8C84A",letterSpacing:6,lineHeight:1}}>SEV CONNECT</div>
         <div style={{fontSize:14,color:"#E74C3C",letterSpacing:2,marginTop:8,fontWeight:800,textTransform:"uppercase"}}>S2 · Berg am Laim ↔ Markt Schwaben</div>
-        <div style={{fontSize:12,color:"#555",marginTop:6}}>11.05.2026 · Piloteinsatz · RVO / DB</div>
+        <div style={{fontSize:12,color:"#555",marginTop:6}}>15.05.2026 · Piloteinsatz · RVO / DB</div>
       </div>
       {!mode?(
         <div style={{width:"100%",maxWidth:420,display:"flex",flexDirection:"column",gap:14}}>
@@ -528,7 +528,7 @@ function DisponentApp({ onLogout }) {
       <div style={{background:"linear-gradient(135deg,#1a2a4a,#0d1b33)",padding:"14px 24px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div>
           <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:26,color:"#E8C84A",letterSpacing:3}}>SEV CONNECT · DISPONENT</div>
-          <div style={{fontSize:11,color:"#4a6fa5",letterSpacing:1,textTransform:"uppercase"}}>S2 · Berg am Laim ↔ Markt Schwaben · 11.05.2026</div>
+          <div style={{fontSize:11,color:"#4a6fa5",letterSpacing:1,textTransform:"uppercase"}}>S2 · Berg am Laim ↔ Markt Schwaben · 15.05.2026</div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:16}}>
           <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:24,color:"#E8C84A",letterSpacing:3}}>{time.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}</div>
@@ -578,7 +578,7 @@ function DisponentApp({ onLogout }) {
 
         {tab==="touren"&&(
           <div>
-            <div style={{fontSize:13,color:"#999",textTransform:"uppercase",letterSpacing:1,marginBottom:16}}>Fahraufträge heute — 11.05.2026</div>
+            <div style={{fontSize:13,color:"#999",textTransform:"uppercase",letterSpacing:1,marginBottom:16}}>Fahraufträge heute — 15.05.2026</div>
             {Object.entries(DIENSTPLAENE).map(([name,plan])=>(
               <div key={name} style={{background:"#fff",border:"1px solid #e8ecf0",borderRadius:14,padding:"14px 18px",marginBottom:16}}>
                 <div style={{fontWeight:800,fontSize:15,marginBottom:8,color:"#1a2a4a"}}>{name} · {plan.dienst}</div>
