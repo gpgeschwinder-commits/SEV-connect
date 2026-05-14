@@ -118,8 +118,7 @@ const getDelayText = (min) => {
 };
 
 const callLS = () => window.open(`tel:${LEITSTELLE_TEL}`,"_blank");
-const openMaps = (lat,lng,name) => { window.location.href = `https://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`; };
-
+window.location.href = `https://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`
 // ── LEITSTELLE BUTTON — immer sichtbar ─────────────────────────
 const LSButton = () => (
   <button onClick={callLS} style={{position:"fixed",bottom:24,right:20,width:56,height:56,borderRadius:"50%",background:"#E74C3C",border:"none",color:"#fff",fontSize:22,cursor:"pointer",boxShadow:"0 4px 20px rgba(231,76,60,.5)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}}>
