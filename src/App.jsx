@@ -2,662 +2,302 @@ import { useState, useEffect, useRef } from "react";
 
 const FONTS = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap');
-  @keyframes pulse   { 0%,100%{opacity:1} 50%{opacity:.3} }
   @keyframes fadeUp  { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes blink   { 0%,100%{opacity:1} 50%{opacity:.2} }
   @keyframes slideUp { from{transform:translateY(60px);opacity:0} to{transform:translateY(0);opacity:1} }
   @keyframes gps     { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.5);opacity:.4} }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body { margin:0; padding:0; background:#0B0F1A; }
 `;
+const LEITSTELLE_TEL="08955164120",DISPATCH_PIN="1234",GPS_RADIUS_M=150;
+const DRIVERS=[{id:1,name:"Elisabeth Bachmeier",avatar:"EB",bus:"ED DB —",tel:"4917628200012"},{id:2,name:"Sebastian Deuschel",avatar:"SD",bus:"ED DB —",tel:"4915158530409"},{id:3,name:"Gerhard Geschwinder",avatar:"GG",bus:"ED DB —",tel:"4915163429782"}];
+const STOPS=[{id:1,name:"München Ostbahnhof Friedenstraße",short:"Ostbahnhof",lat:48.1276,lng:11.6077},{id:2,name:"München Ampfingstraße",short:"Ampfingstr.",lat:48.1285,lng:11.6180},{id:3,name:"München Berg am Laim (S)",short:"Berg am Laim",lat:48.1272,lng:11.6390},{id:4,name:"München Graf-Lehndorff-Straße",short:"Graf-Lehndorff",lat:48.1310,lng:11.6620},{id:5,name:"Feldkirchen (S)",short:"Feldkirchen",lat:48.1315,lng:11.7270},{id:6,name:"Heimstetten (S) Süd",short:"Heimstetten",lat:48.1362,lng:11.7510},{id:7,name:"Grub (S), Nord",short:"Grub",lat:48.1410,lng:11.7710},{id:8,name:"Poing (S), Nord",short:"Poing",lat:48.1720,lng:11.8100},{id:9,name:"Markt Schwaben (S)",short:"Markt Schwaben",lat:48.1930,lng:11.8680},{id:10,name:"Zamilastraße, München",short:"Zamilastr.",lat:48.1380,lng:11.6280},{id:20,name:"Anzing - Lärchenstr.",short:"Anzing",lat:48.1540,lng:11.8540},{id:21,name:"Poing - Anzinger Str.",short:"Poing Anzinger",lat:48.1680,lng:11.8130},{id:22,name:"Poing - Mitterfeldring",short:"Poing Mitterfeld",lat:48.1690,lng:11.8110},{id:23,name:"Poing - Claudiusstr.",short:"Poing Claudius",lat:48.1700,lng:11.8090},{id:24,name:"Kirchheim - Herzogen Wege",short:"Kirchheim",lat:48.1750,lng:11.7780},{id:25,name:"Landsham - Abzweigung Grub",short:"Landsham",lat:48.1810,lng:11.7620},{id:26,name:"Pliening - Ludwigstr.",short:"Pliening",lat:48.1870,lng:11.7900},{id:27,name:"Neufinsing - Rathaus gg. Netto",short:"Neufinsing",lat:48.1920,lng:11.8050},{id:28,name:"Lüß",short:"Lüß",lat:48.1980,lng:11.8180},{id:29,name:"Oberneuching",short:"Oberneuching",lat:48.2040,lng:11.8300},{id:30,name:"Am Wirtsacker Oberneuching",short:"Wirtsacker",lat:48.2050,lng:11.8310},{id:31,name:"Niederneuching - Kirchenstr.",short:"Niederneuching",lat:48.2100,lng:11.8420},{id:32,name:"Moosinning - Dorfstraße",short:"Moosinning Dorf",lat:48.2160,lng:11.8530},{id:33,name:"Moosinning - Sonnenstr.",short:"Moosinning Sonnen",lat:48.2170,lng:11.8540},{id:34,name:"Moosinning - Erdinger Str.",short:"Moosinning Erding",lat:48.2180,lng:11.8560},{id:35,name:"Notzing - Römerstraße",short:"Notzing",lat:48.2250,lng:11.8680},{id:36,name:"Montessori Schule Aufkirchen",short:"Montessori Aufkirchen",lat:48.2310,lng:11.8750},{id:40,name:"Markt Schwaben - Burgerfeld",short:"MS Burgerfeld",lat:48.1920,lng:11.8700},{id:41,name:"Markt Schwaben - Rathaus",short:"MS Rathaus",lat:48.1935,lng:11.8690},{id:42,name:"Herdweg - Fichtenstr.",short:"Herdweg Fichten",lat:48.1980,lng:11.8600},{id:43,name:"Herdweg - Römerstr.",short:"Herdweg Römer",lat:48.1990,lng:11.8590},{id:44,name:"Ottenhofen - Bahnhof",short:"Ottenhofen",lat:48.2060,lng:11.8480},{id:45,name:"St. Kolomann - S-Bahnhof",short:"St. Kolomann",lat:48.2120,lng:11.8400},{id:46,name:"Wörth - Pretzener Str.",short:"Wörth",lat:48.2180,lng:11.8320},{id:47,name:"Niederwörth - MVV Haltestelle",short:"Niederwörth",lat:48.2210,lng:11.8280},{id:48,name:"Pretzen - Nußbaumstr.",short:"Pretzen",lat:48.2270,lng:11.8200},{id:49,name:"Erding - Brauerstr.",short:"Erding Brauerstr.",lat:48.3010,lng:11.9070},{id:50,name:"Erding - Gerberstr.",short:"Erding Gerberstr.",lat:48.3040,lng:11.9060},{id:51,name:"Erding - Am Stadion",short:"Erding Stadion",lat:48.3060,lng:11.9050},{id:52,name:"Erding - Anton-Bruckner-Str.",short:"Erding Bruckner",lat:48.3080,lng:11.9040},{id:53,name:"Erding - Uhlandstr.",short:"Erding Uhland",lat:48.3090,lng:11.9030},{id:54,name:"Erding - Dachauer Str.",short:"Erding Dachauer",lat:48.3100,lng:11.9020},{id:55,name:"Montessori Schule Erding",short:"Montessori Erding",lat:48.3120,lng:11.9010},{id:60,name:"Niederding Dorfplatz (MVV)",short:"Niederding",lat:48.2900,lng:11.8950},{id:61,name:"Schwaig (ED) Hochstr. (MVV)",short:"Schwaig",lat:48.2850,lng:11.8900},{id:62,name:"Oberding Hauptstr./Grasfeldweg",short:"Oberding",lat:48.2800,lng:11.8820},{id:63,name:"Notzing Gartenstr. Nord (MVV)",short:"Notzing Garten",lat:48.2750,lng:11.8730},{id:64,name:"Notzing Postschwaige (MVV)",short:"Notzing Post",lat:48.2730,lng:11.8710},{id:65,name:"Goldach Pfarrer-Prüger-Str. (MVV)",short:"Goldach",lat:48.2680,lng:11.8640},{id:66,name:"Grüneck Erdinger Straße (MVV)",short:"Grüneck",lat:48.2600,lng:11.8550},{id:67,name:"Neufahrn ARAL",short:"Neufahrn",lat:48.3200,lng:11.6700},{id:68,name:"München Paul-Hindemith-Allee (MVG)",short:"Hindemith-Allee",lat:48.1850,lng:11.6500},{id:69,name:"München Euro-Industriepark-Nord",short:"Euro-Industriepark",lat:48.1900,lng:11.6450},{id:70,name:"München Hufelandstraße",short:"Hufelandstr.",lat:48.1950,lng:11.6400},{id:71,name:"München Anhalter Platz (MVG)",short:"Anhalter Platz",lat:48.2000,lng:11.6350},{id:72,name:"München BMW Riesenfeldstraße",short:"BMW Riesenfeldstr.",lat:48.2050,lng:11.6300},{id:73,name:"München BMW Dostlerstraße",short:"BMW Dostlerstr.",lat:48.2100,lng:11.6250},{id:80,name:"Blumenkindergarten, Blumenstr. 1, Hallbergmoos",short:"Blumenkindergarten",lat:48.3350,lng:11.7500},{id:81,name:"Burg Trausnitz, Landshut",short:"Burg Trausnitz",lat:48.5380,lng:12.1530},{id:90,name:"Wasserburg/Inn Bf",short:"Wasserburg Bf",lat:48.0600,lng:12.2200},{id:91,name:"Ramerberg",short:"Ramerberg",lat:48.0200,lng:12.1800},{id:92,name:"Rott (Inn)",short:"Rott (Inn)",lat:48.0000,lng:12.1400},{id:93,name:"Schechen",short:"Schechen",lat:47.9800,lng:12.1100},{id:94,name:"Ro Hochschule",short:"Ro Hochschule",lat:47.9200,lng:12.1050},{id:95,name:"Rosenheim",short:"Rosenheim",lat:47.8600,lng:12.1280},{id:96,name:"Wöhrstraße, 84503 Altötting",short:"Altötting Wöhrstr.",lat:48.2220,lng:12.6760},{id:97,name:"Garching, Freising",short:"Garching Freising",lat:48.4350,lng:11.9780}];
+const getStop=id=>STOPS.find(s=>s.id===id)||{};
+const distM=(a1,o1,a2,o2)=>{const R=6371000,dA=(a2-a1)*Math.PI/180,dO=(o2-o1)*Math.PI/180;const a=Math.sin(dA/2)**2+Math.cos(a1*Math.PI/180)*Math.cos(a2*Math.PI/180)*Math.sin(dO/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));};
+const timeToMin=t=>{const[h,m]=t.split(":").map(Number);return h*60+m;};
+const getDelayColor=m=>m<0?"#E74C3C":m<=2?"#2ECC71":"#F39C12";
+const getDelayText=m=>m===0?"pünktlich":m<0?`${m} Min`:`+${m} Min`;
+const callLS=()=>window.open(`tel:${LEITSTELLE_TEL}`,"_blank");
+const openMaps=(lat,lng)=>{const ios=/iPad|iPhone|iPod/.test(navigator.userAgent);window.open(ios?`maps://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`:`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`,"_blank");};
+const todayStr=()=>{const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;};
+const isPast=dk=>dk<todayStr();
+const isToday=dk=>dk===todayStr();
 
-const LEITSTELLE_TEL = "08955164120";
-const DISPATCH_PIN   = "1234";
-const GPS_RADIUS_M   = 150;
+const L3_HIN=[{id:20,t:"07:15"},{id:21,t:"07:21"},{id:22,t:"07:26"},{id:23,t:"07:27"},{id:24,t:"07:38"},{id:25,t:"07:44"},{id:26,t:"07:48"},{id:27,t:"07:51"},{id:28,t:"07:54"},{id:29,t:"08:00"},{id:31,t:"08:04"},{id:32,t:"08:07"},{id:33,t:"08:08"},{id:34,t:"08:10"},{id:35,t:"08:14"},{id:36,t:"08:20"}];
+const makeL3Rueck=(h,m)=>{const base=[36,35,34,33,32,31,30,29,28,27,26,25,24,23,22,21,20];const offs=[0,6,10,11,12,15,19,20,26,29,32,36,40,46,47,48,54];return base.map((id,i)=>{const t=h*60+m+offs[i];return{id,t:`${String(Math.floor(t/60)).padStart(2,"0")}:${String(t%60).padStart(2,"0")}`};});};
+const L4_HIN=[{id:40,t:"07:28"},{id:41,t:"07:32"},{id:42,t:"07:37"},{id:43,t:"07:39"},{id:44,t:"07:43"},{id:45,t:"07:48"},{id:46,t:"07:51"},{id:47,t:"07:52"},{id:48,t:"07:56"},{id:49,t:"08:04"},{id:50,t:"08:07"},{id:51,t:"08:11"},{id:52,t:"08:13"},{id:53,t:"08:16"},{id:54,t:"08:18"},{id:55,t:"08:22"}];
+const makeL4Rueck=(h,m)=>{const base=[55,54,53,52,51,50,49,48,47,46,45,44,43,42,41,40];const offs=[0,4,6,8,10,13,17,25,28,29,30,35,39,41,43,47];return base.map((id,i)=>{const t=h*60+m+offs[i];return{id,t:`${String(Math.floor(t/60)).padStart(2,"0")}:${String(t%60).padStart(2,"0")}`};});};
+const BMW8_RUECK=[{id:73,t:"15:35"},{id:72,t:"15:42"},{id:71,t:"15:44"},{id:70,t:"15:45"},{id:69,t:"15:46"},{id:68,t:"15:48"},{id:67,t:"15:49"},{id:66,t:"16:00"},{id:65,t:"16:05"},{id:64,t:"16:10"},{id:63,t:"16:12"},{id:62,t:"16:18"},{id:61,t:"16:22"},{id:60,t:"16:40"}];
+const RB44=(p)=>[{id:`${p}_1`,dep:"21:04",arr:"21:49",label:"RB44 · Wasserburg → Rosenheim",stops:[{id:90,t:"21:04"},{id:91,t:"21:14"},{id:92,t:"21:21"},{id:93,t:"21:31"},{id:94,t:"21:43"},{id:95,t:"21:49"}]},{id:`${p}_2`,dep:"22:11",arr:"22:55",label:"RB44 · Rosenheim → Wasserburg",stops:[{id:95,t:"22:11"},{id:94,t:"22:16"},{id:93,t:"22:28"},{id:92,t:"22:38"},{id:91,t:"22:45"},{id:90,t:"22:55"}]},{id:`${p}_3`,dep:"23:04",arr:"23:49",label:"RB44 · Wasserburg → Rosenheim",stops:[{id:90,t:"23:04"},{id:91,t:"23:14"},{id:92,t:"23:21"},{id:93,t:"23:31"},{id:94,t:"23:43"},{id:95,t:"23:49"}]}];
+const S2AMF=(p)=>[{id:`${p}_1`,dep:"05:16",arr:"06:10",label:"Ostbahnhof → Markt Schwaben",stops:[{id:1,t:"05:16"},{id:2,t:"05:19"},{id:3,t:"05:22"},{id:4,t:"05:34"},{id:5,t:"05:45"},{id:6,t:"05:51"},{id:7,t:"05:55"},{id:8,t:"05:59"},{id:9,t:"06:10"}]},{id:`${p}_2`,dep:"06:14",arr:"07:02",label:"Markt Schwaben → Berg am Laim",stops:[{id:9,t:"06:14"},{id:8,t:"06:25"},{id:7,t:"06:29"},{id:6,t:"06:33"},{id:5,t:"06:39"},{id:4,t:"06:50"},{id:3,t:"07:02"}]},{id:`${p}_3`,dep:"07:08",arr:"07:56",label:"Berg am Laim → Markt Schwaben",stops:[{id:3,t:"07:08"},{id:4,t:"07:20"},{id:5,t:"07:31"},{id:6,t:"07:37"},{id:7,t:"07:41"},{id:8,t:"07:45"},{id:9,t:"07:56"}]},{id:`${p}_4`,dep:"08:04",arr:"08:52",label:"Markt Schwaben → Berg am Laim",stops:[{id:9,t:"08:04"},{id:8,t:"08:15"},{id:7,t:"08:19"},{id:6,t:"08:23"},{id:5,t:"08:29"},{id:4,t:"08:40"},{id:3,t:"08:52"}]},{id:`${p}_5`,dep:"09:48",arr:"10:36",label:"Berg am Laim → Markt Schwaben",stops:[{id:3,t:"09:48"},{id:4,t:"10:00"},{id:5,t:"10:11"},{id:6,t:"10:17"},{id:7,t:"10:21"},{id:8,t:"10:25"},{id:9,t:"10:36"}]},{id:`${p}_6`,dep:"10:44",arr:"11:32",label:"Markt Schwaben → Berg am Laim",stops:[{id:9,t:"10:44"},{id:8,t:"10:55"},{id:7,t:"10:59"},{id:6,t:"11:03"},{id:5,t:"11:09"},{id:4,t:"11:20"},{id:3,t:"11:32"}]},{id:`${p}_7`,dep:"11:38",arr:"12:26",label:"Berg am Laim → Markt Schwaben",stops:[{id:3,t:"11:38"},{id:4,t:"11:50"},{id:5,t:"12:01"},{id:6,t:"12:07"},{id:7,t:"12:11"},{id:8,t:"12:15"},{id:9,t:"12:26"}]},{id:`${p}_8`,dep:"12:34",arr:"13:22",label:"Markt Schwaben → Berg am Laim",stops:[{id:9,t:"12:34"},{id:8,t:"12:45"},{id:7,t:"12:49"},{id:6,t:"12:53"},{id:5,t:"12:59"},{id:4,t:"13:10"},{id:3,t:"13:22"}]}];
+const S2AC=(p)=>[{id:`${p}_1`,dep:"05:16",arr:"06:10",label:"Ostbahnhof → Markt Schwaben",stops:[{id:1,t:"05:16"},{id:2,t:"05:19"},{id:3,t:"05:22"},{id:4,t:"05:34"},{id:5,t:"05:45"},{id:6,t:"05:51"},{id:7,t:"05:55"},{id:8,t:"05:59"},{id:9,t:"06:10"}]},{id:`${p}_2`,dep:"06:14",arr:"07:02",label:"Markt Schwaben → Berg am Laim",stops:[{id:9,t:"06:14"},{id:8,t:"06:25"},{id:7,t:"06:29"},{id:6,t:"06:33"},{id:5,t:"06:39"},{id:4,t:"06:50"},{id:3,t:"07:02"}]},{id:`${p}_3`,dep:"07:18",arr:"08:06",label:"Berg am Laim → Markt Schwaben",stops:[{id:3,t:"07:18"},{id:4,t:"07:30"},{id:5,t:"07:41"},{id:6,t:"07:47"},{id:7,t:"07:51"},{id:8,t:"07:55"},{id:9,t:"08:06"}]},{id:`${p}_4`,dep:"08:14",arr:"09:02",label:"Markt Schwaben → Berg am Laim",stops:[{id:9,t:"08:14"},{id:8,t:"08:25"},{id:7,t:"08:29"},{id:6,t:"08:33"},{id:5,t:"08:39"},{id:4,t:"08:50"},{id:3,t:"09:02"}]},{id:`${p}_5`,dep:"10:18",arr:"11:06",label:"Berg am Laim → Markt Schwaben",stops:[{id:3,t:"10:18"},{id:4,t:"10:30"},{id:5,t:"10:41"},{id:6,t:"10:47"},{id:7,t:"10:51"},{id:8,t:"10:55"},{id:9,t:"11:06"}]},{id:`${p}_6`,dep:"11:14",arr:"12:02",label:"Markt Schwaben → Berg am Laim",stops:[{id:9,t:"11:14"},{id:8,t:"11:25"},{id:7,t:"11:29"},{id:6,t:"11:33"},{id:5,t:"11:39"},{id:4,t:"11:50"},{id:3,t:"12:02"}]},{id:`${p}_7`,dep:"12:58",arr:"13:46",label:"Berg am Laim → Markt Schwaben",stops:[{id:3,t:"12:58"},{id:4,t:"13:10"},{id:5,t:"13:21"},{id:6,t:"13:27"},{id:7,t:"13:31"},{id:8,t:"13:35"},{id:9,t:"13:46"}]},{id:`${p}_8`,dep:"13:54",arr:"14:42",label:"Markt Schwaben → Berg am Laim",stops:[{id:9,t:"13:54"},{id:8,t:"14:05"},{id:7,t:"14:09"},{id:6,t:"14:13"},{id:5,t:"14:19"},{id:4,t:"14:30"},{id:3,t:"14:42"}]}];
+const S2_0518=[{id:"GG_0518_1",dep:"06:24",arr:"07:12",label:"Markt Schwaben → Berg am Laim",stops:[{id:9,t:"06:24"},{id:8,t:"06:35"},{id:7,t:"06:39"},{id:6,t:"06:43"},{id:5,t:"06:49"},{id:4,t:"07:00"},{id:3,t:"07:12"}]},{id:"GG_0518_2",dep:"07:18",arr:"08:06",label:"Berg am Laim → Markt Schwaben",stops:[{id:3,t:"07:18"},{id:4,t:"07:30"},{id:5,t:"07:41"},{id:6,t:"07:47"},{id:7,t:"07:51"},{id:8,t:"07:55"},{id:9,t:"08:06"}]},{id:"GG_0518_3",dep:"08:14",arr:"09:02",label:"Markt Schwaben → Berg am Laim",stops:[{id:9,t:"08:14"},{id:8,t:"08:25"},{id:7,t:"08:29"},{id:6,t:"08:33"},{id:5,t:"08:39"},{id:4,t:"08:50"},{id:3,t:"09:02"}]},{id:"GG_0518_4",dep:"09:58",arr:"10:46",label:"Berg am Laim → Markt Schwaben",stops:[{id:3,t:"09:58"},{id:4,t:"10:10"},{id:5,t:"10:21"},{id:6,t:"10:27"},{id:7,t:"10:31"},{id:8,t:"10:35"},{id:9,t:"10:46"}]},{id:"GG_0518_5",dep:"10:54",arr:"11:42",label:"Markt Schwaben → Berg am Laim",stops:[{id:9,t:"10:54"},{id:8,t:"11:05"},{id:7,t:"11:09"},{id:6,t:"11:13"},{id:5,t:"11:19"},{id:4,t:"11:30"},{id:3,t:"11:42"}]},{id:"GG_0518_6",dep:"11:48",arr:"12:36",label:"Berg am Laim → Markt Schwaben",stops:[{id:3,t:"11:48"},{id:4,t:"12:00"},{id:5,t:"12:11"},{id:6,t:"12:17"},{id:7,t:"12:21"},{id:8,t:"12:25"},{id:9,t:"12:36"}]},{id:"GG_0518_7",dep:"12:44",arr:"13:32",label:"Markt Schwaben → Berg am Laim",stops:[{id:9,t:"12:44"},{id:8,t:"12:55"},{id:7,t:"12:59"},{id:6,t:"13:03"},{id:5,t:"13:09"},{id:4,t:"13:20"},{id:3,t:"13:32"}]},{id:"GG_0518_8",dep:"14:28",arr:"15:16",label:"Berg am Laim → Markt Schwaben",stops:[{id:3,t:"14:28"},{id:4,t:"14:40"},{id:5,t:"14:51"},{id:6,t:"14:57"},{id:7,t:"15:01"},{id:8,t:"15:05"},{id:9,t:"15:16"}]},{id:"GG_0518_9",dep:"15:24",arr:"16:12",label:"Markt Schwaben → Berg am Laim",stops:[{id:9,t:"15:24"},{id:8,t:"15:35"},{id:7,t:"15:39"},{id:6,t:"15:43"},{id:5,t:"15:49"},{id:4,t:"16:00"},{id:3,t:"16:12"}]}];
 
-const DRIVERS = [
-  { id:1, name:"Elisabeth Bachmeier", avatar:"EB", bus:"ED DB 42", tel:"4917628200012" },
-  { id:2, name:"Sebastian Deuschel",  avatar:"SD", bus:"ED DB XX", tel:"4915158530409" },
-  { id:3, name:"Gerhard Geschwinder", avatar:"GG", bus:"ED DB 94", tel:"4915163429782" },
-];
+const FREE=(d,e)=>({fahrzeug:"—",dienst:"FREI",code:null,dienstbeginn:d||"—",dienstende:e||"—",anfahrt:null,rueckfahrt:null,touren:[]});
+const OB=(stopId)=>({ziel:"München Ostbahnhof Friedenstraße",stopId});
 
-const STOPS = [
-  { id:1, name:"München Ostbahnhof Friedenstraße", short:"Ostbahnhof",     lat:48.1276, lng:11.6077 },
-  { id:2, name:"München Ampfingstraße",            short:"Ampfingstr.",    lat:48.1285, lng:11.6180 },
-  { id:3, name:"München Berg am Laim",             short:"Berg am Laim",   lat:48.1272, lng:11.6390 },
-  { id:4, name:"München Graf-Lehndorff-Straße",    short:"Graf-Lehndorff", lat:48.1310, lng:11.6620 },
-  { id:5, name:"Feldkirchen",                      short:"Feldkirchen",    lat:48.1315, lng:11.7270 },
-  { id:6, name:"Heimstetten Süd",                  short:"Heimstetten",    lat:48.1362, lng:11.7510 },
-  { id:7, name:"Grub Nord",                        short:"Grub",           lat:48.1410, lng:11.7710 },
-  { id:8, name:"Poing Nord",                       short:"Poing",          lat:48.1720, lng:11.8100 },
-  { id:9, name:"Markt Schwaben",                   short:"Markt Schwaben", lat:48.1930, lng:11.8680 },
-];
-
-const DIENSTPLAENE = {
-  "Gerhard Geschwinder": {
-    dienst:"0472207", datum:"15.05.2026", dienstbeginn:"04:46", dienstende:"13:52",
-    anfahrt: { ziel:"München Ostbahnhof Friedenstraße", lat:48.1276, lng:11.6077 },
-    rueckfahrt: { ziel:"Betriebshof München Zentrale" },
-    touren:[
-      { id:"GG1", dep:"05:16", arr:"06:10", vonId:1, nachId:9,
-        stops:[{id:1,t:"05:16"},{id:2,t:"05:19"},{id:3,t:"05:22"},{id:4,t:"05:34"},{id:5,t:"05:45"},{id:6,t:"05:51"},{id:7,t:"05:55"},{id:8,t:"05:59"},{id:9,t:"06:10"}]},
-      { id:"GG2", dep:"06:14", arr:"07:02", vonId:9, nachId:3,
-        stops:[{id:9,t:"06:14"},{id:8,t:"06:25"},{id:7,t:"06:29"},{id:6,t:"06:33"},{id:5,t:"06:39"},{id:4,t:"06:50"},{id:3,t:"07:02"}]},
-      { id:"GG3", dep:"07:08", arr:"07:56", vonId:3, nachId:9,
-        stops:[{id:3,t:"07:08"},{id:4,t:"07:20"},{id:5,t:"07:31"},{id:6,t:"07:37"},{id:7,t:"07:41"},{id:8,t:"07:45"},{id:9,t:"07:56"}]},
-      { id:"GG4", dep:"08:04", arr:"08:52", vonId:9, nachId:3,
-        stops:[{id:9,t:"08:04"},{id:8,t:"08:15"},{id:7,t:"08:19"},{id:6,t:"08:23"},{id:5,t:"08:29"},{id:4,t:"08:40"},{id:3,t:"08:52"}]},
-      { id:"GG5", dep:"09:48", arr:"10:36", vonId:3, nachId:9,
-        stops:[{id:3,t:"09:48"},{id:4,t:"10:00"},{id:5,t:"10:11"},{id:6,t:"10:17"},{id:7,t:"10:21"},{id:8,t:"10:25"},{id:9,t:"10:36"}]},
-      { id:"GG6", dep:"10:44", arr:"11:32", vonId:9, nachId:3,
-        stops:[{id:9,t:"10:44"},{id:8,t:"10:55"},{id:7,t:"10:59"},{id:6,t:"11:03"},{id:5,t:"11:09"},{id:4,t:"11:20"},{id:3,t:"11:32"}]},
-      { id:"GG7", dep:"11:38", arr:"12:26", vonId:3, nachId:9,
-        stops:[{id:3,t:"11:38"},{id:4,t:"11:50"},{id:5,t:"12:01"},{id:6,t:"12:07"},{id:7,t:"12:11"},{id:8,t:"12:15"},{id:9,t:"12:26"}]},
-      { id:"GG8", dep:"12:34", arr:"13:22", vonId:9, nachId:3,
-        stops:[{id:9,t:"12:34"},{id:8,t:"12:45"},{id:7,t:"12:49"},{id:6,t:"12:53"},{id:5,t:"12:59"},{id:4,t:"13:10"},{id:3,t:"13:22"}]},
-    ]
+const DIENSTPLAENE={
+  "Gerhard Geschwinder":{
+    "2026-05-18":{fahrzeug:"ED-DB 94",dienst:"0472217",code:"MKCH73",dienstbeginn:"05:54",dienstende:"16:12",anfahrt:{ziel:"Zamilastraße, München",stopId:10},rueckfahrt:{ziel:"Betriebshof München Zentrale"},touren:S2_0518},
+    "2026-05-19":{fahrzeug:"ED-DB 74",dienst:"ED-DB 74",code:null,dienstbeginn:"07:15",dienstende:"~17:15",anfahrt:null,rueckfahrt:{ziel:"Betriebshof"},touren:[{id:"GG_0519_1",dep:"07:10",arr:"~08:30",label:"Stadtkurs Erding — Linie 1",note:"⏳ Tourverlauf folgt",stops:[{id:1,t:"07:10"}]},{id:"GG_0519_2",dep:"08:15",arr:"14:00",label:"Blumenkindergarten → Burg Trausnitz Landshut",note:"Rückkehr 14:00 Uhr · Navigation per Google Maps",stops:[{id:80,t:"08:15"},{id:81,t:"~09:30"}]},{id:"GG_0519_3",dep:"16:01",arr:"~17:15",label:"Linie 3 Rückfahrt — Monte 3",note:"Bereitschaft 16:01 Uhr · Zusatzhalt: Am Wirtsacker",stops:makeL3Rueck(16,1)}]},
+    "2026-05-20":{fahrzeug:"ED-DB 74",dienst:"ED-DB 74",code:null,dienstbeginn:"07:10",dienstende:"~17:00",anfahrt:null,rueckfahrt:{ziel:"Betriebshof"},touren:[{id:"GG_0520_1",dep:"07:10",arr:"~08:30",label:"Stadtkurs Erding — Linie 1",note:"⏳ Tourverlauf folgt",stops:[{id:1,t:"07:10"}]},{id:"GG_0520_2",dep:"08:15",arr:"14:00",label:"Blumenkindergarten → Burg Trausnitz Landshut",note:"Rückkehr 14:00 Uhr · Navigation per Google Maps",stops:[{id:80,t:"08:15"},{id:81,t:"~09:30"}]},{id:"GG_0520_3",dep:"16:04",arr:"~17:00",label:"Linie 4 Rückfahrt — Monte 4",note:"Bereitschaft 16:04 Uhr",stops:makeL4Rueck(16,4)}]},
+    "2026-05-21":{fahrzeug:"ED-DB 74",dienst:"ED-DB 74",code:null,dienstbeginn:"07:28",dienstende:"~16:40",anfahrt:null,rueckfahrt:{ziel:"Betriebshof"},touren:[{id:"GG_0521_1",dep:"07:28",arr:"08:22",label:"Linie 4 Hinfahrt — Monte 4",stops:L4_HIN},{id:"GG_0521_2",dep:"12:25",arr:"~13:00",label:"Stadtkurs Erding — Linie 1",note:"⏳ Tourverlauf folgt",stops:[{id:1,t:"12:25"}]},{id:"GG_0521_3",dep:"13:04",arr:"~14:00",label:"Linie 4 Rückfahrt — Monte 4",note:"Bereitschaft 13:04 Uhr",stops:makeL4Rueck(13,4)},{id:"GG_0521_4",dep:"15:35",arr:"16:40",label:"BMW Erding 8 — Rückfahrt München",stops:BMW8_RUECK}]},
+    "2026-05-22":{fahrzeug:"ED-DB 74",dienst:"ED-DB 74",code:null,dienstbeginn:"07:15",dienstende:"~13:45",anfahrt:null,rueckfahrt:{ziel:"Betriebshof"},touren:[{id:"GG_0522_1",dep:"07:15",arr:"08:20",label:"Linie 3 Hinfahrt — Monte 3",note:"Bereitschaft 07:15 Uhr",stops:L3_HIN},{id:"GG_0522_2",dep:"12:45",arr:"~13:45",label:"Linie 3 Rückfahrt — Monte 3",note:"Bereitschaft 12:45 Uhr · Zusatzhalt: Am Wirtsacker",stops:makeL3Rueck(13,1)}]},
+    "2026-05-23":FREE(),
+    "2026-05-24":{fahrzeug:"ED-DB 42",dienst:"0472507",code:"WTER72",dienstbeginn:"04:46",dienstende:"15:12",anfahrt:OB(1),rueckfahrt:{ziel:"Betriebshof München Zentrale"},touren:S2AC("GG_0524")},
+    "2026-05-25":FREE(),
+    "2026-05-26":{fahrzeug:"ED-DB 42",dienst:"0472307",code:"CRRB11",dienstbeginn:"04:46",dienstende:"13:52",anfahrt:OB(1),rueckfahrt:{ziel:"Betriebshof München Zentrale"},touren:S2AMF("GG_0526")},
+    "2026-05-27":{fahrzeug:"ED-DB 42",dienst:"0472307",code:"BNLT81",dienstbeginn:"04:46",dienstende:"13:52",anfahrt:OB(1),rueckfahrt:{ziel:"Betriebshof München Zentrale"},touren:S2AMF("GG_0527")},
+    "2026-05-28":{fahrzeug:"ED-DB 42",dienst:"0472307",code:"ZHFM74",dienstbeginn:"04:46",dienstende:"13:52",anfahrt:OB(1),rueckfahrt:{ziel:"Betriebshof München Zentrale"},touren:S2AMF("GG_0528")},
+    "2026-05-29":{fahrzeug:"ED-DB 42",dienst:"0472307",code:"BUOB79",dienstbeginn:"04:46",dienstende:"13:52",anfahrt:OB(1),rueckfahrt:{ziel:"Betriebshof München Zentrale"},touren:S2AMF("GG_0529")},
+    "2026-05-30":FREE(),
+    "2026-05-31":{fahrzeug:"ED-DB 42",dienst:"0472507",code:"JESW35",dienstbeginn:"04:46",dienstende:"15:12",anfahrt:OB(1),rueckfahrt:{ziel:"Betriebshof München Zentrale"},touren:S2AC("GG_0531")},
   },
-  "Sebastian Deuschel": {
-    dienst:"0472408", datum:"15.05.2026", dienstbeginn:"14:28", dienstende:"00:16",
-    anfahrt: { ziel:"München Berg am Laim", lat:48.1272, lng:11.6390 },
-    rueckfahrt: { ziel:"Betriebshof München Zentrale" },
-    touren:[
-      { id:"SD1", dep:"14:58", arr:"15:46", vonId:3, nachId:9,
-        stops:[{id:3,t:"14:58"},{id:4,t:"15:10"},{id:5,t:"15:21",warn:"⚠️ 07.05: Umleitung Baustelle MS"},{id:6,t:"15:27"},{id:7,t:"15:31"},{id:8,t:"15:35"},{id:9,t:"15:46"}]},
-      { id:"SD2", dep:"15:54", arr:"16:42", vonId:9, nachId:3,
-        stops:[{id:9,t:"15:54"},{id:8,t:"16:05"},{id:7,t:"16:09"},{id:6,t:"16:13"},{id:5,t:"16:19"},{id:4,t:"16:30"},{id:3,t:"16:42"}]},
-      { id:"SD3", dep:"17:58", arr:"18:46", vonId:3, nachId:9,
-        stops:[{id:3,t:"17:58"},{id:4,t:"18:10"},{id:5,t:"18:21"},{id:6,t:"18:27"},{id:7,t:"18:31"},{id:8,t:"18:35"},{id:9,t:"18:46"}]},
-      { id:"SD4", dep:"18:54", arr:"19:42", vonId:9, nachId:3,
-        stops:[{id:9,t:"18:54"},{id:8,t:"19:05"},{id:7,t:"19:09"},{id:6,t:"19:13"},{id:5,t:"19:19"},{id:4,t:"19:30"},{id:3,t:"19:42"}]},
-    ]
+  "Sebastian Deuschel":{
+    "2026-05-25":{fahrzeug:"ED-DB 74",dienst:"RB44",code:null,dienstbeginn:"16:00",dienstende:"23:49",anfahrt:{ziel:"Wöhrstraße, 84503 Altötting",stopId:96},rueckfahrt:{ziel:"Betriebshof"},touren:[{id:"SD_0525_0",dep:"16:00",arr:"~19:00",label:"Altötting → Garching, Freising",note:"Navigation per Google Maps",stops:[{id:96,t:"16:00"},{id:97,t:"~19:00"}]},...RB44("SD_0525")]},
+    "2026-05-26":{fahrzeug:"ED-DB 74",dienst:"RB44",code:null,dienstbeginn:"21:04",dienstende:"23:49",anfahrt:null,rueckfahrt:{ziel:"Betriebshof"},touren:RB44("SD_0526")},
+    "2026-05-27":FREE(),"2026-05-28":FREE(),"2026-05-29":FREE(),"2026-05-30":FREE(),"2026-05-31":FREE(),
   },
-  "Elisabeth Bachmeier": {
-    dienst:"—", datum:"15.05.2026", dienstbeginn:"—", dienstende:"—",
-    anfahrt: null, touren:[]
+  "Elisabeth Bachmeier":{
+    "2026-05-25":FREE(),
+    "2026-05-26":{fahrzeug:"ED-DB 94",dienst:"0472340",code:"MEKS95",dienstbeginn:"13:48",dienstende:"23:58",anfahrt:{ziel:"Zamilastraße, München",stopId:10},rueckfahrt:{ziel:"Betriebshof München Zentrale"},touren:[
+      {id:"EB_0526_1",dep:"14:18",arr:"15:06",label:"Berg am Laim → Markt Schwaben",stops:[{id:3,t:"14:18"},{id:4,t:"14:30"},{id:5,t:"14:41"},{id:6,t:"14:47"},{id:7,t:"14:51"},{id:8,t:"14:55"},{id:9,t:"15:06"}]},
+      {id:"EB_0526_2",dep:"15:14",arr:"16:02",label:"Markt Schwaben → Berg am Laim",stops:[{id:9,t:"15:14"},{id:8,t:"15:25"},{id:7,t:"15:29"},{id:6,t:"15:33"},{id:5,t:"15:39"},{id:4,t:"15:50"},{id:3,t:"16:02"}]},
+      {id:"EB_0526_3",dep:"17:08",arr:"17:56",label:"Berg am Laim → Markt Schwaben",stops:[{id:3,t:"17:08"},{id:4,t:"17:20"},{id:5,t:"17:31"},{id:6,t:"17:37"},{id:7,t:"17:41"},{id:8,t:"17:45"},{id:9,t:"17:56"}]},
+      {id:"EB_0526_4",dep:"18:04",arr:"18:52",label:"Markt Schwaben → Berg am Laim",stops:[{id:9,t:"18:04"},{id:8,t:"18:15"},{id:7,t:"18:19"},{id:6,t:"18:23"},{id:5,t:"18:29"},{id:4,t:"18:40"},{id:3,t:"18:52"}]},
+      {id:"EB_0526_5",dep:"18:58",arr:"~20:00",label:"Berg am Laim → ...",note:"⏳ Seite 2 fehlt — Tourverlauf folgt",stops:[{id:3,t:"18:58"}]},
+    ]},
+    "2026-05-27":{fahrzeug:"ED-DB 94",dienst:"0472340",code:"WJ2229",dienstbeginn:"13:48",dienstende:"23:58",anfahrt:{ziel:"Zamilastraße, München",stopId:10},rueckfahrt:{ziel:"Betriebshof München Zentrale"},touren:[
+      {id:"EB_0527_1",dep:"14:18",arr:"15:06",label:"Berg am Laim → Markt Schwaben",stops:[{id:3,t:"14:18"},{id:4,t:"14:30"},{id:5,t:"14:41"},{id:6,t:"14:47"},{id:7,t:"14:51"},{id:8,t:"14:55"},{id:9,t:"15:06"}]},
+      {id:"EB_0527_2",dep:"15:14",arr:"16:02",label:"Markt Schwaben → Berg am Laim",stops:[{id:9,t:"15:14"},{id:8,t:"15:25"},{id:7,t:"15:29"},{id:6,t:"15:33"},{id:5,t:"15:39"},{id:4,t:"15:50"},{id:3,t:"16:02"}]},
+      {id:"EB_0527_3",dep:"17:08",arr:"17:56",label:"Berg am Laim → Markt Schwaben",stops:[{id:3,t:"17:08"},{id:4,t:"17:20"},{id:5,t:"17:31"},{id:6,t:"17:37"},{id:7,t:"17:41"},{id:8,t:"17:45"},{id:9,t:"17:56"}]},
+      {id:"EB_0527_4",dep:"18:04",arr:"18:52",label:"Markt Schwaben → Berg am Laim",stops:[{id:9,t:"18:04"},{id:8,t:"18:15"},{id:7,t:"18:19"},{id:6,t:"18:23"},{id:5,t:"18:29"},{id:4,t:"18:40"},{id:3,t:"18:52"}]},
+      {id:"EB_0527_5",dep:"18:58",arr:"~20:00",label:"Berg am Laim → ...",note:"⏳ Seite 2 fehlt — Tourverlauf folgt",stops:[{id:3,t:"18:58"}]},
+    ]},
+    "2026-05-28":{fahrzeug:"ED-DB 94",dienst:"0472340",code:"YOL162",dienstbeginn:"13:48",dienstende:"23:58",anfahrt:{ziel:"Zamilastraße, München",stopId:10},rueckfahrt:{ziel:"Betriebshof München Zentrale"},touren:[
+      {id:"EB_0528_1",dep:"14:18",arr:"15:06",label:"Berg am Laim → Markt Schwaben",stops:[{id:3,t:"14:18"},{id:4,t:"14:30"},{id:5,t:"14:41"},{id:6,t:"14:47"},{id:7,t:"14:51"},{id:8,t:"14:55"},{id:9,t:"15:06"}]},
+      {id:"EB_0528_2",dep:"15:14",arr:"16:02",label:"Markt Schwaben → Berg am Laim",stops:[{id:9,t:"15:14"},{id:8,t:"15:25"},{id:7,t:"15:29"},{id:6,t:"15:33"},{id:5,t:"15:39"},{id:4,t:"15:50"},{id:3,t:"16:02"}]},
+      {id:"EB_0528_3",dep:"17:08",arr:"17:56",label:"Berg am Laim → Markt Schwaben",stops:[{id:3,t:"17:08"},{id:4,t:"17:20"},{id:5,t:"17:31"},{id:6,t:"17:37"},{id:7,t:"17:41"},{id:8,t:"17:45"},{id:9,t:"17:56"}]},
+      {id:"EB_0528_4",dep:"18:04",arr:"18:52",label:"Markt Schwaben → Berg am Laim",stops:[{id:9,t:"18:04"},{id:8,t:"18:15"},{id:7,t:"18:19"},{id:6,t:"18:23"},{id:5,t:"18:29"},{id:4,t:"18:40"},{id:3,t:"18:52"}]},
+      {id:"EB_0528_5",dep:"18:58",arr:"~20:00",label:"Berg am Laim → ...",note:"⏳ Seite 2 fehlt — Tourverlauf folgt",stops:[{id:3,t:"18:58"}]},
+    ]},
+    "2026-05-29":{fahrzeug:"ED-DB 94",dienst:"0472340",code:"SLOS11",dienstbeginn:"13:48",dienstende:"23:58",anfahrt:{ziel:"Zamilastraße, München",stopId:10},rueckfahrt:{ziel:"Betriebshof München Zentrale"},touren:[
+      {id:"EB_0529_1",dep:"14:18",arr:"15:06",label:"Berg am Laim → Markt Schwaben",stops:[{id:3,t:"14:18"},{id:4,t:"14:30"},{id:5,t:"14:41"},{id:6,t:"14:47"},{id:7,t:"14:51"},{id:8,t:"14:55"},{id:9,t:"15:06"}]},
+      {id:"EB_0529_2",dep:"15:14",arr:"16:02",label:"Markt Schwaben → Berg am Laim",stops:[{id:9,t:"15:14"},{id:8,t:"15:25"},{id:7,t:"15:29"},{id:6,t:"15:33"},{id:5,t:"15:39"},{id:4,t:"15:50"},{id:3,t:"16:02"}]},
+      {id:"EB_0529_3",dep:"17:08",arr:"17:56",label:"Berg am Laim → Markt Schwaben",stops:[{id:3,t:"17:08"},{id:4,t:"17:20"},{id:5,t:"17:31"},{id:6,t:"17:37"},{id:7,t:"17:41"},{id:8,t:"17:45"},{id:9,t:"17:56"}]},
+      {id:"EB_0529_4",dep:"18:04",arr:"18:52",label:"Markt Schwaben → Berg am Laim",stops:[{id:9,t:"18:04"},{id:8,t:"18:15"},{id:7,t:"18:19"},{id:6,t:"18:23"},{id:5,t:"18:29"},{id:4,t:"18:40"},{id:3,t:"18:52"}]},
+      {id:"EB_0529_5",dep:"18:58",arr:"~20:00",label:"Berg am Laim → ...",note:"⏳ Seite 2 fehlt — Tourverlauf folgt",stops:[{id:3,t:"18:58"}]},
+    ]},
+    "2026-05-30":FREE(),
+    "2026-05-31":FREE(),
   },
 };
 
-const SONDERMELDUNGEN = [
-  { id:3, type:"info", haltId:null, title:"🅿️ Pausenplatz", text:"Zamilastraße, Berg am Laim.", isNew:false },
-];
+const SONDERMELDUNGEN=[{id:3,type:"info",title:"🅿️ Pausenplatz",text:"Zamilastraße, Berg am Laim.",isNew:false}];
+const POENALE=[{rule:"Fahrt ausgefallen",amount:250,sev:"high"},{rule:"Fahrzeug technisch defekt",amount:250,sev:"high"},{rule:"Lenk-/Ruhezeiten verletzt",amount:250,sev:"high"},{rule:"Falscher Bustyp",amount:150,sev:"medium"},{rule:"Falsche/fehlende Beschilderung",amount:100,sev:"medium"},{rule:"DB SEM App nicht benutzt",amount:100,sev:"medium"},{rule:"Verspätete/verfrühte Abfahrt",amount:100,sev:"medium"},{rule:"Zwischenhalt nicht bedient",amount:100,sev:"medium"},{rule:"Störung nicht gemeldet",amount:100,sev:"medium"},{rule:"Haltestelle nicht angesagt",amount:50,sev:"low"}];
 
-const POENALE = [
-  { rule:"Fahrt ausgefallen",              amount:250, sev:"high" },
-  { rule:"Fahrzeug technisch defekt",      amount:250, sev:"high" },
-  { rule:"Lenk-/Ruhezeiten verletzt",      amount:250, sev:"high" },
-  { rule:"Falscher Bustyp",                amount:150, sev:"medium" },
-  { rule:"Falsche/fehlende Beschilderung", amount:100, sev:"medium" },
-  { rule:"DB SEM App nicht benutzt",       amount:100, sev:"medium" },
-  { rule:"Verspätete/verfrühte Abfahrt",   amount:100, sev:"medium" },
-  { rule:"Zwischenhalt nicht bedient",     amount:100, sev:"medium" },
-  { rule:"Störung nicht gemeldet",         amount:100, sev:"medium" },
-  { rule:"Haltestelle nicht angesagt",     amount:50,  sev:"low" },
-];
+const LSButton=()=><button onClick={callLS} style={{position:"fixed",bottom:24,right:20,width:56,height:56,borderRadius:"50%",background:"#E74C3C",border:"none",color:"#fff",fontSize:22,cursor:"pointer",boxShadow:"0 4px 20px rgba(231,76,60,.5)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}}>📞</button>;
+const NavBtn=({stop,small})=>{if(!stop?.lat)return null;return <button onClick={e=>{e.stopPropagation();openMaps(stop.lat,stop.lng);}} style={{background:"#1a6fb5",border:"none",borderRadius:8,padding:small?"4px 8px":"6px 12px",color:"#fff",fontSize:small?11:12,fontWeight:700,cursor:"pointer",fontFamily:"'Nunito',sans-serif",display:"inline-flex",alignItems:"center",gap:4,flexShrink:0,whiteSpace:"nowrap"}}>🗺️ {small?"Nav":"Navigation"}</button>;};
 
-const getStop = id => STOPS.find(s=>s.id===id) || {};
-
-const distM = (a1,o1,a2,o2) => {
-  const R=6371000,dA=(a2-a1)*Math.PI/180,dO=(o2-o1)*Math.PI/180;
-  const a=Math.sin(dA/2)**2+Math.cos(a1*Math.PI/180)*Math.cos(a2*Math.PI/180)*Math.sin(dO/2)**2;
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-};
-
-const timeToMin = t => { const [h,m]=t.split(":").map(Number); return h*60+m; };
-
-const getDelayColor = (min) => {
-  if(min < 0) return "#E74C3C";
-  if(min <= 2) return "#2ECC71";
-  return "#F39C12";
-};
-
-const getDelayText = (min) => {
-  if(min === 0) return "pünktlich";
-  if(min < 0) return `${min} Min`;
-  return `+${min} Min`;
-};
-
-const callLS = () => window.open(`tel:${LEITSTELLE_TEL}`,"_blank");
-const openMaps = (lat,lng,name) => {
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const url = isIOS
-    ? `maps://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`
-    : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
-  window.open(url, "_blank");
-};
-
-// ── LEITSTELLE BUTTON — immer sichtbar ─────────────────────────
-const LSButton = () => (
-  <button onClick={callLS} style={{position:"fixed",bottom:24,right:20,width:56,height:56,borderRadius:"50%",background:"#E74C3C",border:"none",color:"#fff",fontSize:22,cursor:"pointer",boxShadow:"0 4px 20px rgba(231,76,60,.5)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}}>
-    📞
-  </button>
-);
-
-// ══════════════════════════════════════════════════════════════
-// LOGIN
-// ══════════════════════════════════════════════════════════════
-function Login({ onDriver, onDispatch }) {
-  const [mode,setMode]=useState(null),[sel,setSel]=useState(""),[pin,setPin]=useState(""),[err,setErr]=useState("");
-  return (
-    <div style={{fontFamily:"'Nunito',sans-serif",background:"#0B0F1A",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:32}}>
-      <style>{FONTS}</style>
-      <div style={{textAlign:"center",marginBottom:48,animation:"fadeUp .5s ease"}}>
-        <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:64,color:"#E8C84A",letterSpacing:6,lineHeight:1}}>SEV CONNECT</div>
-        <div style={{fontSize:14,color:"#E74C3C",letterSpacing:2,marginTop:8,fontWeight:800,textTransform:"uppercase"}}>S2 · Berg am Laim ↔ Markt Schwaben</div>
-        <div style={{fontSize:12,color:"#555",marginTop:6}}>15.05.2026 · Piloteinsatz · RVO / DB</div>
-      </div>
-      {!mode?(
-        <div style={{width:"100%",maxWidth:420,display:"flex",flexDirection:"column",gap:14}}>
-          <button onClick={()=>setMode("d")} style={{background:"#E8C84A",color:"#0B0F1A",border:"none",borderRadius:20,padding:"26px",fontSize:22,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>👨‍✈️ Ich bin Fahrer</button>
-          <button onClick={()=>setMode("dis")} style={{background:"rgba(255,255,255,.07)",color:"#fff",border:"1px solid rgba(255,255,255,.2)",borderRadius:20,padding:"22px",fontSize:18,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>🖥️ Ich bin Disponent</button>
-        </div>
-      ):mode==="d"?(
-        <div style={{width:"100%",maxWidth:420,animation:"fadeUp .3s ease"}}>
-          <div style={{fontSize:12,color:"#666",textTransform:"uppercase",letterSpacing:2,marginBottom:16}}>Fahrer wählen</div>
-          {DRIVERS.map(d=>(
-            <button key={d.id} onClick={()=>setSel(d.name)} style={{width:"100%",display:"flex",alignItems:"center",gap:16,background:sel===d.name?"rgba(232,200,74,.12)":"rgba(255,255,255,.04)",border:sel===d.name?"2px solid #E8C84A":"2px solid transparent",borderRadius:16,padding:"16px 20px",cursor:"pointer",marginBottom:10,transition:"all .15s"}}>
-              <div style={{width:48,height:48,borderRadius:"50%",background:"#6E1E6E",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Bebas Neue',sans-serif",fontSize:17,color:"#E8C84A",flexShrink:0}}>{d.avatar}</div>
-              <div style={{flex:1,textAlign:"left"}}>
-                <div style={{fontSize:18,fontWeight:800,color:"#fff"}}>{d.name}</div>
-                <div style={{fontSize:13,color:"#C0CAD8",marginTop:2}}>Bus: {d.bus}</div>
-              </div>
-              {sel===d.name&&<span style={{color:"#E8C84A",fontSize:22}}>✓</span>}
-            </button>
-          ))}
-          {err&&<div style={{color:"#E74C3C",fontSize:13,marginBottom:10,textAlign:"center"}}>{err}</div>}
-          <div style={{display:"flex",gap:10,marginTop:8}}>
-            <button onClick={()=>setMode(null)} style={{flex:1,background:"transparent",border:"1px solid rgba(255,255,255,.15)",borderRadius:14,padding:"14px",color:"#C0CAD8",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>← Zurück</button>
-            <button onClick={()=>{if(!sel){setErr("Bitte Fahrer wählen");return;}onDriver(DRIVERS.find(d=>d.name===sel));}} style={{flex:2,background:"#2ECC71",border:"none",borderRadius:14,padding:"14px",color:"#0B0F1A",fontSize:18,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>Anmelden →</button>
-          </div>
-        </div>
-      ):(
-        <div style={{width:"100%",maxWidth:420,animation:"fadeUp .3s ease"}}>
-          <div style={{fontSize:12,color:"#666",textTransform:"uppercase",letterSpacing:2,marginBottom:14}}>Disponent-PIN</div>
-          <input type="password" maxLength={4} value={pin} onChange={e=>{setPin(e.target.value);setErr("");}} onKeyDown={e=>e.key==="Enter"&&(pin===DISPATCH_PIN?onDispatch():setErr("Falscher PIN"))} placeholder="● ● ● ●"
-            style={{width:"100%",background:"rgba(255,255,255,.07)",border:"2px solid rgba(255,255,255,.15)",borderRadius:16,padding:"22px",fontSize:36,textAlign:"center",color:"#E8C84A",fontFamily:"monospace",letterSpacing:18,outline:"none",marginBottom:8}}/>
-          <div style={{fontSize:12,color:"#444",textAlign:"center",marginBottom:20}}>PIN: 1234</div>
-          {err&&<div style={{color:"#E74C3C",fontSize:13,marginBottom:10,textAlign:"center"}}>{err}</div>}
-          <div style={{display:"flex",gap:10}}>
-            <button onClick={()=>setMode(null)} style={{flex:1,background:"transparent",border:"1px solid rgba(255,255,255,.15)",borderRadius:14,padding:"14px",color:"#C0CAD8",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>← Zurück</button>
-            <button onClick={()=>pin===DISPATCH_PIN?onDispatch():setErr("Falscher PIN")} style={{flex:2,background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.2)",borderRadius:14,padding:"14px",color:"#fff",fontSize:17,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>Anmelden →</button>
-          </div>
-        </div>
-      )}
+function Login({onDriver,onDispatch}){
+  const[mode,setMode]=useState(null),[sel,setSel]=useState(""),[pin,setPin]=useState(""),[err,setErr]=useState("");
+  const today=new Date().toLocaleDateString("de-DE",{weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"});
+  return <div style={{fontFamily:"'Nunito',sans-serif",background:"#0B0F1A",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:32}}>
+    <style>{FONTS}</style>
+    <div style={{textAlign:"center",marginBottom:48,animation:"fadeUp .5s ease"}}>
+      <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:64,color:"#E8C84A",letterSpacing:6,lineHeight:1}}>SEV CONNECT</div>
+      <div style={{fontSize:14,color:"#E74C3C",letterSpacing:2,marginTop:8,fontWeight:800,textTransform:"uppercase"}}>S2 · Berg am Laim ↔ Markt Schwaben</div>
+      <div style={{fontSize:12,color:"#555",marginTop:6}}>{today} · RVO / DB · v4.6</div>
     </div>
-  );
+    {!mode?<div style={{width:"100%",maxWidth:420,display:"flex",flexDirection:"column",gap:14}}>
+      <button onClick={()=>setMode("d")} style={{background:"#E8C84A",color:"#0B0F1A",border:"none",borderRadius:20,padding:"26px",fontSize:22,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>👨‍✈️ Ich bin Fahrer</button>
+      <button onClick={()=>setMode("dis")} style={{background:"rgba(255,255,255,.07)",color:"#fff",border:"1px solid rgba(255,255,255,.2)",borderRadius:20,padding:"22px",fontSize:18,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>🖥️ Ich bin Disponent</button>
+    </div>:mode==="d"?<div style={{width:"100%",maxWidth:420,animation:"fadeUp .3s ease"}}>
+      <div style={{fontSize:12,color:"#666",textTransform:"uppercase",letterSpacing:2,marginBottom:16}}>Fahrer wählen</div>
+      {DRIVERS.map(d=><button key={d.id} onClick={()=>setSel(d.name)} style={{width:"100%",display:"flex",alignItems:"center",gap:16,background:sel===d.name?"rgba(232,200,74,.12)":"rgba(255,255,255,.04)",border:sel===d.name?"2px solid #E8C84A":"2px solid transparent",borderRadius:16,padding:"16px 20px",cursor:"pointer",marginBottom:10}}>
+        <div style={{width:48,height:48,borderRadius:"50%",background:"#6E1E6E",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Bebas Neue',sans-serif",fontSize:17,color:"#E8C84A",flexShrink:0}}>{d.avatar}</div>
+        <div style={{flex:1,textAlign:"left"}}><div style={{fontSize:18,fontWeight:800,color:"#fff"}}>{d.name}</div><div style={{fontSize:13,color:"#C0CAD8",marginTop:2}}>Bus: {d.bus}</div></div>
+        {sel===d.name&&<span style={{color:"#E8C44A",fontSize:22}}>✓</span>}
+      </button>)}
+      {err&&<div style={{color:"#E74C3C",fontSize:13,marginBottom:10,textAlign:"center"}}>{err}</div>}
+      <div style={{display:"flex",gap:10,marginTop:8}}>
+        <button onClick={()=>setMode(null)} style={{flex:1,background:"transparent",border:"1px solid rgba(255,255,255,.15)",borderRadius:14,padding:"14px",color:"#C0CAD8",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>← Zurück</button>
+        <button onClick={()=>{if(!sel){setErr("Bitte Fahrer wählen");return;}onDriver(DRIVERS.find(d=>d.name===sel));}} style={{flex:2,background:"#2ECC71",border:"none",borderRadius:14,padding:"14px",color:"#0B0F1A",fontSize:18,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>Anmelden →</button>
+      </div>
+    </div>:<div style={{width:"100%",maxWidth:420,animation:"fadeUp .3s ease"}}>
+      <div style={{fontSize:12,color:"#666",textTransform:"uppercase",letterSpacing:2,marginBottom:14}}>Disponent-PIN</div>
+      <input type="password" maxLength={4} value={pin} onChange={e=>{setPin(e.target.value);setErr("");}} onKeyDown={e=>e.key==="Enter"&&(pin===DISPATCH_PIN?onDispatch():setErr("Falscher PIN"))} placeholder="● ● ● ●" style={{width:"100%",background:"rgba(255,255,255,.07)",border:"2px solid rgba(255,255,255,.15)",borderRadius:16,padding:"22px",fontSize:36,textAlign:"center",color:"#E8C84A",fontFamily:"monospace",letterSpacing:18,outline:"none",marginBottom:8}}/>
+      <div style={{fontSize:12,color:"#444",textAlign:"center",marginBottom:20}}>PIN: 1234</div>
+      {err&&<div style={{color:"#E74C3C",fontSize:13,marginBottom:10,textAlign:"center"}}>{err}</div>}
+      <div style={{display:"flex",gap:10}}>
+        <button onClick={()=>setMode(null)} style={{flex:1,background:"transparent",border:"1px solid rgba(255,255,255,.15)",borderRadius:14,padding:"14px",color:"#C0CAD8",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>← Zurück</button>
+        <button onClick={()=>pin===DISPATCH_PIN?onDispatch():setErr("Falscher PIN")} style={{flex:2,background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.2)",borderRadius:14,padding:"14px",color:"#fff",fontSize:17,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>Anmelden →</button>
+      </div>
+    </div>}
+  </div>;
 }
 
-// ══════════════════════════════════════════════════════════════
-// FAHRER APP
-// ══════════════════════════════════════════════════════════════
-function FahrerApp({ driver, onLogout }) {
-  const plan = DIENSTPLAENE[driver.name];
-  const touren = plan?.touren || [];
-
-  const [phase,      setPhase]      = useState("tagesplan"); // tagesplan | anfahrt | tour
-  const [activeIdx,  setActiveIdx]  = useState(0);
-  const [stopIdx,    setStopIdx]    = useState(0);
-  const [doneTours,  setDoneTours]  = useState([]);
-  const [anfahrtDone,setAnfahrtDone]= useState(false);
-  const [time,       setTime]       = useState(new Date());
-  const [gpsOn,      setGpsOn]      = useState(false);
-  const [gpsBanner,  setGpsBanner]  = useState(null);
-  const [delay,      setDelay]      = useState(0);
-  const [showAlerts, setShowAlerts] = useState(false);
-  const [showQ,      setShowQ]      = useState(false);
-  const wRef = useRef(null);
-  const tRef = useRef(null);
-
-  // Persist
-  useEffect(()=>{
-    try {
-      const s = localStorage.getItem("sev4_"+driver.name);
-      if(s) { const d=JSON.parse(s); setDoneTours(d.doneTours||[]); setAnfahrtDone(d.anfahrtDone||false); setActiveIdx(d.activeIdx||0); }
-    } catch(e){}
-  },[driver.name]);
-
-  useEffect(()=>{
-    try { localStorage.setItem("sev4_"+driver.name, JSON.stringify({doneTours,anfahrtDone,activeIdx})); } catch(e){}
-  },[doneTours,anfahrtDone,activeIdx,driver.name]);
-
-  useEffect(()=>{ const x=setInterval(()=>setTime(new Date()),1000); return()=>clearInterval(x); },[]);
-
-  const activeTour = touren[activeIdx];
-  const curTourStop = activeTour?.stops[stopIdx];
-  const curStop = curTourStop ? getStop(curTourStop.id) : null;
-
-  // Delay calculation
-  useEffect(()=>{
-    if(!curTourStop) return;
-    const planned = timeToMin(curTourStop.t);
-    const now = time.getHours()*60 + time.getMinutes();
-    setDelay(now - planned);
-  },[time,curTourStop]);
-
-  // GPS
-  const startGPS = () => {
-    if(!navigator.geolocation) return;
-    setGpsOn(true);
-    wRef.current = navigator.geolocation.watchPosition(pos=>{
-      const {latitude:la,longitude:lo} = pos.coords;
-      if(phase==="anfahrt" && plan?.anfahrt) {
-        if(distM(la,lo,plan.anfahrt.lat,plan.anfahrt.lng) < GPS_RADIUS_M) handleAnfahrtDone();
-      } else if(phase==="tour" && curStop?.lat) {
-        if(distM(la,lo,curStop.lat,curStop.lng) < GPS_RADIUS_M) handleStopConfirm();
-      }
-    },()=>{},{enableHighAccuracy:true,maximumAge:3000,timeout:8000});
-  };
-  const stopGPS = () => { if(wRef.current) navigator.geolocation.clearWatch(wRef.current); setGpsOn(false); };
-  useEffect(()=>()=>{ if(wRef.current) navigator.geolocation.clearWatch(wRef.current); },[]);
-
-  const showBanner = (name) => {
-    setGpsBanner(name);
-    clearTimeout(tRef.current);
-    tRef.current = setTimeout(()=>setGpsBanner(null),4000);
+function FahrerApp({driver,onLogout}){
+  const allPlans=DIENSTPLAENE[driver.name]||{};
+  const today=todayStr();
+  const dayKeys=Object.keys(allPlans).sort();
+  const futureDays=dayKeys.filter(k=>k>=today);
+  const pastDays=dayKeys.filter(k=>k<today).reverse();
+  const initDay=allPlans[today]?today:(futureDays[0]||dayKeys[0]||today);
+  const[activeDayKey,setActiveDayKey]=useState(initDay);
+  const plan=allPlans[activeDayKey]||null;
+  const touren=plan?.touren||[];
+  const dayIsPast=isPast(activeDayKey),dayIsToday=isToday(activeDayKey);
+  const[phase,setPhase]=useState("tagesplan");
+  const[activeIdx,setActiveIdx]=useState(0);
+  const[stopIdx,setStopIdx]=useState(0);
+  const[doneTours,setDoneTours]=useState({});
+  const[anfahrtDone,setAnfahrtDone]=useState({});
+  const[time,setTime]=useState(new Date());
+  const[gpsOn,setGpsOn]=useState(false);
+  const[gpsBanner,setGpsBanner]=useState(null);
+  const[delay,setDelay]=useState(0);
+  const[showQ,setShowQ]=useState(false);
+  const[showTourDone,setShowTourDone]=useState(false);
+  const wRef=useRef(null),tRef=useRef(null);
+  useEffect(()=>{try{const s=localStorage.getItem("sev46_"+driver.name);if(s){const d=JSON.parse(s);setDoneTours(d.doneTours||{});setAnfahrtDone(d.anfahrtDone||{});}}catch(e){}},[driver.name]);
+  useEffect(()=>{try{localStorage.setItem("sev46_"+driver.name,JSON.stringify({doneTours,anfahrtDone}));}catch(e){}},[doneTours,anfahrtDone,driver.name]);
+  useEffect(()=>{const x=setInterval(()=>setTime(new Date()),1000);return()=>clearInterval(x);},[]);
+  const todayDone=doneTours[activeDayKey]||[];
+  const todayAnfahrt=anfahrtDone[activeDayKey]||false;
+  const activeTour=touren[activeIdx];
+  const curTourStop=activeTour?.stops[stopIdx];
+  const curStop=curTourStop?getStop(curTourStop.id):null;
+  useEffect(()=>{if(!curTourStop||curTourStop.t?.startsWith("~"))return;setDelay(time.getHours()*60+time.getMinutes()-timeToMin(curTourStop.t));},[time,curTourStop]);
+  const startGPS=()=>{if(!navigator.geolocation)return;setGpsOn(true);wRef.current=navigator.geolocation.watchPosition(pos=>{const{latitude:la,longitude:lo}=pos.coords;if(phase==="anfahrt"&&plan?.anfahrt){const s=getStop(plan.anfahrt.stopId);if(s?.lat&&distM(la,lo,s.lat,s.lng)<GPS_RADIUS_M)handleAnfahrtDone();}else if(phase==="tour"&&curStop?.lat){if(distM(la,lo,curStop.lat,curStop.lng)<GPS_RADIUS_M)handleStopConfirm();}},()=>{},{enableHighAccuracy:true,maximumAge:3000,timeout:8000});};
+  const stopGPS=()=>{if(wRef.current)navigator.geolocation.clearWatch(wRef.current);setGpsOn(false);};
+  useEffect(()=>()=>{if(wRef.current)navigator.geolocation.clearWatch(wRef.current);},[]);
+  const showBanner=n=>{setGpsBanner(n);clearTimeout(tRef.current);tRef.current=setTimeout(()=>setGpsBanner(null),4000);};
+  const handleAnfahrtDone=()=>{showBanner(plan?.anfahrt?.ziel||"Anfahrt");setAnfahrtDone(p=>({...p,[activeDayKey]:true}));setPhase("tagesplan");};
+  const handleStopConfirm=()=>{if(!activeTour)return;showBanner(getStop(activeTour.stops[stopIdx].id).name||"Halt");if(stopIdx<activeTour.stops.length-1){setStopIdx(i=>i+1);}else{setShowTourDone(true);}};
+  const handleTourAbgeschlossen=()=>{setDoneTours(p=>({...p,[activeDayKey]:[...(p[activeDayKey]||[]),activeTour.id]}));setActiveIdx(i=>i+1);setStopIdx(0);setShowTourDone(false);setPhase("tagesplan");};
+  const getTourStatus=(t,i)=>{if(dayIsPast)return"archiv";if(todayDone.includes(t.id))return"done";const prev=i===0?todayAnfahrt||!plan?.anfahrt:todayDone.includes(touren[i-1]?.id);return prev?"active":"locked";};
+  const getKW=dk=>{const d=new Date(dk+"T12:00:00");const jan4=new Date(d.getFullYear(),0,4);return`KW${Math.ceil(((d-jan4)/86400000+jan4.getDay()+1)/7)}`;};
+  const groupByKW=keys=>{const g={};keys.forEach(dk=>{const kw=getKW(dk);if(!g[kw])g[kw]=[];g[kw].push(dk);});return g;};
+  const DayCard=({dk})=>{
+    const p=allPlans[dk];if(!p)return null;
+    const isAct=dk===activeDayKey,past=isPast(dk),tod=isToday(dk);
+    const label=new Date(dk+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"});
+    return <button onClick={()=>{setActiveDayKey(dk);setPhase("tagesplan");}} style={{background:isAct?"rgba(232,200,74,.12)":past?"rgba(255,255,255,.02)":"rgba(255,255,255,.04)",border:isAct?"2px solid #E8C84A":tod?"2px solid rgba(46,204,113,.4)":"1px solid rgba(255,255,255,.06)",borderRadius:12,padding:"8px 14px",cursor:"pointer",textAlign:"left",marginBottom:6,width:"100%"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <span style={{fontSize:13,fontWeight:800,color:isAct?"#E8C84A":past?"#555":tod?"#2ECC71":"#C0CAD8"}}>{label}{tod?" · HEUTE":""}</span>
+        <span style={{fontSize:11,color:"#444"}}>{p.fahrzeug} · {p.dienst}</span>
+      </div>
+      {p.code&&<div style={{fontSize:11,color:"#9B59B6",marginTop:2}}>Code: {p.code}</div>}
+      {p.touren.length>0&&<div style={{fontSize:11,color:"#555",marginTop:2}}>{p.touren.length} Tour{p.touren.length!==1?"en":""} · {p.dienstbeginn}–{p.dienstende}</div>}
+      {p.dienst==="FREI"&&<div style={{fontSize:11,color:"#555",marginTop:2}}>🎉 Frei</div>}
+    </button>;
   };
 
-  const handleAnfahrtDone = () => {
-    showBanner(plan.anfahrt.ziel);
-    setAnfahrtDone(true);
-    setPhase("tagesplan");
-  };
-
-  const handleStopConfirm = () => {
-    if(!activeTour) return;
-    const name = getStop(activeTour.stops[stopIdx].id).name;
-    showBanner(name);
-    if(stopIdx < activeTour.stops.length-1) {
-      setStopIdx(i=>i+1);
-    } else {
-      setDoneTours(p=>[...p,activeTour.id]);
-      setActiveIdx(i=>i+1);
-      setStopIdx(0);
-      setPhase("tagesplan");
-    }
-  };
-
-  const getTourStatus = (t,i) => {
-    if(doneTours.includes(t.id)) return "done";
-    if(i===activeIdx && anfahrtDone) return "active";
-    if(i===0 && anfahrtDone) return "active";
-    if(i>0 && doneTours.includes(touren[i-1]?.id)) return "active";
-    return "locked";
-  };
-
-  const newAlerts = SONDERMELDUNGEN.filter(a=>a.isNew);
-  const curStopWarn = curTourStop?.warn || SONDERMELDUNGEN.find(s=>s.haltId===curTourStop?.id)?.text;
-
-  // ── ANFAHRT VIEW ────────────────────────────────────────────
-  if(phase==="anfahrt") return (
-    <div style={{fontFamily:"'Nunito',sans-serif",background:"#0B0F1A",minHeight:"100vh",color:"#fff",maxWidth:520,margin:"0 auto",display:"flex",flexDirection:"column"}}>
+  if(phase==="anfahrt"){
+    const aStop=plan?.anfahrt?getStop(plan.anfahrt.stopId):null;
+    return <div style={{fontFamily:"'Nunito',sans-serif",background:"#0B0F1A",minHeight:"100vh",color:"#fff",maxWidth:520,margin:"0 auto",display:"flex",flexDirection:"column"}}>
       <style>{FONTS}</style>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 20px",borderBottom:"1px solid rgba(255,255,255,.08)"}}>
         <button onClick={()=>setPhase("tagesplan")} style={{background:"transparent",border:"none",color:"#C0CAD8",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>← Tagesplan</button>
         <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:24,color:"#E8C84A",letterSpacing:3}}>{time.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}</div>
-        <button onClick={gpsOn?stopGPS:startGPS} style={{background:gpsOn?"rgba(52,152,219,.2)":"rgba(255,255,255,.06)",border:`1px solid ${gpsOn?"#3498DB":"rgba(255,255,255,.15)"}`,borderRadius:10,padding:"6px 12px",color:gpsOn?"#3498DB":"#888",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Nunito',sans-serif",display:"flex",alignItems:"center",gap:5}}>
-          <span style={{animation:gpsOn?"gps 1.5s infinite":"none",display:"inline-block"}}>📡</span>{gpsOn?"GPS":"GPS an"}
-        </button>
+        <button onClick={gpsOn?stopGPS:startGPS} style={{background:gpsOn?"rgba(52,152,219,.2)":"rgba(255,255,255,.06)",border:`1px solid ${gpsOn?"#3498DB":"rgba(255,255,255,.15)"}`,borderRadius:10,padding:"6px 12px",color:gpsOn?"#3498DB":"#888",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Nunito',sans-serif",display:"flex",alignItems:"center",gap:5}}><span style={{animation:gpsOn?"gps 1.5s infinite":"none",display:"inline-block"}}>📡</span>{gpsOn?"GPS":"GPS an"}</button>
       </div>
       <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:32,textAlign:"center"}}>
-        <div style={{fontSize:13,color:"#666",textTransform:"uppercase",letterSpacing:3,marginBottom:16}}>ANFAHRT</div>
-        <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:38,color:"#fff",lineHeight:1.1,marginBottom:8}}>{plan?.anfahrt?.ziel}</div>
+        <div style={{fontSize:13,color:"#666",textTransform:"uppercase",letterSpacing:3,marginBottom:16}}>ANFAHRT · BUS ABHOLEN</div>
+        <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:28,color:"#fff",lineHeight:1.2,marginBottom:8}}>{plan?.anfahrt?.ziel}</div>
         <div style={{fontSize:14,color:"#888",marginBottom:32}}>Dienstbeginn: {plan?.dienstbeginn} Uhr</div>
-        <button onClick={()=>openMaps(plan?.anfahrt?.lat,plan?.anfahrt?.lng,plan?.anfahrt?.ziel)} style={{width:"100%",maxWidth:320,background:"#E8C84A",border:"none",borderRadius:16,padding:"20px",fontSize:18,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif",color:"#0B0F1A",marginBottom:14}}>
-          🗺️ Navigation starten
-        </button>
-        <button onClick={handleAnfahrtDone} style={{width:"100%",maxWidth:320,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.15)",borderRadius:16,padding:"16px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif",color:"#C0CAD8"}}>
-          ✓ Angekommen
-        </button>
-        <div style={{marginTop:16,fontSize:12,color:"#555"}}>📡 GPS erkennt Ankunft automatisch</div>
+        {aStop?.lat&&<button onClick={()=>openMaps(aStop.lat,aStop.lng)} style={{width:"100%",maxWidth:320,background:"#E8C84A",border:"none",borderRadius:16,padding:"20px",fontSize:18,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif",color:"#0B0F1A",marginBottom:14}}>🗺️ Navigation starten</button>}
+        <button onClick={handleAnfahrtDone} style={{width:"100%",maxWidth:320,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.15)",borderRadius:16,padding:"16px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif",color:"#C0CAD8"}}>✓ Angekommen</button>
       </div>
       <LSButton/>
+    </div>;
+  }
+
+  if(phase==="tour"&&activeTour) return <div style={{fontFamily:"'Nunito',sans-serif",background:"#0B0F1A",minHeight:"100vh",color:"#fff",maxWidth:520,margin:"0 auto",display:"flex",flexDirection:"column"}}>
+    <style>{FONTS}</style>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 20px",borderBottom:"1px solid rgba(255,255,255,.08)"}}>
+      <button onClick={()=>setPhase("tagesplan")} style={{background:"transparent",border:"none",color:"#C0CAD8",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>← Tagesplan</button>
+      <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:24,color:"#E8C84A",letterSpacing:3}}>{time.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}</div>
+      <button onClick={gpsOn?stopGPS:startGPS} style={{background:gpsOn?"rgba(52,152,219,.2)":"rgba(255,255,255,.06)",border:`1px solid ${gpsOn?"#3498DB":"rgba(255,255,255,.15)"}`,borderRadius:10,padding:"6px 12px",color:gpsOn?"#3498DB":"#888",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Nunito',sans-serif",display:"flex",alignItems:"center",gap:5}}><span style={{animation:gpsOn?"gps 1.5s infinite":"none",display:"inline-block"}}>📡</span>{gpsOn?"GPS":"GPS an"}</button>
     </div>
-  );
-
-  // ── TOUR VIEW ───────────────────────────────────────────────
-  if(phase==="tour" && activeTour) return (
-    <div style={{fontFamily:"'Nunito',sans-serif",background:"#0B0F1A",minHeight:"100vh",color:"#fff",maxWidth:520,margin:"0 auto",display:"flex",flexDirection:"column"}}>
-      <style>{FONTS}</style>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 20px",borderBottom:"1px solid rgba(255,255,255,.08)"}}>
-        <button onClick={()=>setPhase("tagesplan")} style={{background:"transparent",border:"none",color:"#C0CAD8",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>← Tagesplan</button>
-        <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:24,color:"#E8C84A",letterSpacing:3}}>{time.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}</div>
-        <button onClick={gpsOn?stopGPS:startGPS} style={{background:gpsOn?"rgba(52,152,219,.2)":"rgba(255,255,255,.06)",border:`1px solid ${gpsOn?"#3498DB":"rgba(255,255,255,.15)"}`,borderRadius:10,padding:"6px 12px",color:gpsOn?"#3498DB":"#888",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Nunito',sans-serif",display:"flex",alignItems:"center",gap:5}}>
-          <span style={{animation:gpsOn?"gps 1.5s infinite":"none",display:"inline-block"}}>📡</span>{gpsOn?"GPS":"GPS an"}
-        </button>
+    <div style={{height:4,background:"rgba(255,255,255,.06)"}}><div style={{height:"100%",width:`${(stopIdx/Math.max(activeTour.stops.length-1,1))*100}%`,background:"linear-gradient(90deg,#6E1E6E,#E8C84A)",transition:"width .5s"}}/></div>
+    <div style={{flex:1,display:"flex",flexDirection:"column",padding:"20px 20px 120px"}}>
+      <div style={{fontSize:12,color:"#555",textTransform:"uppercase",letterSpacing:3,marginBottom:8}}>NÄCHSTER HALT</div>
+      <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:curStop?.name?.length>18?30:curStop?.name?.length>12?40:50,color:"#fff",lineHeight:1.1,marginBottom:6}}>{curStop?.name||"—"}</div>
+      {curStop?.lat&&<div style={{marginBottom:12}}><NavBtn stop={curStop}/></div>}
+      <div style={{display:"inline-flex",alignItems:"center",gap:10,background:"rgba(255,255,255,.05)",borderRadius:12,padding:"10px 16px",marginBottom:16,alignSelf:"flex-start"}}>
+        <span style={{fontSize:16,color:"#888"}}>⏱ {curTourStop?.t}</span>
+        {!curTourStop?.t?.startsWith("~")&&<span style={{fontSize:16,fontWeight:800,color:getDelayColor(delay)}}>{getDelayText(delay)}</span>}
       </div>
-
-      {/* Progress */}
-      <div style={{height:4,background:"rgba(255,255,255,.06)",margin:"0 0 0 0"}}>
-        <div style={{height:"100%",width:`${(stopIdx/Math.max(activeTour.stops.length-1,1))*100}%`,background:"linear-gradient(90deg,#6E1E6E,#E8C84A)",transition:"width .5s"}}/>
-      </div>
-
-      <div style={{flex:1,display:"flex",flexDirection:"column",padding:"20px 20px 100px"}}>
-        <div style={{fontSize:12,color:"#555",textTransform:"uppercase",letterSpacing:3,marginBottom:12}}>NÄCHSTER HALT</div>
-        <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:curStop?.name?.length>18?42:curStop?.name?.length>12?52:62,color:"#fff",lineHeight:1.05,marginBottom:8}}>{curStop?.name}</div>
-
-        {/* Verspätungsanzeige */}
-        <div style={{display:"inline-flex",alignItems:"center",gap:10,background:"rgba(255,255,255,.05)",borderRadius:12,padding:"10px 16px",marginBottom:curStopWarn?12:20,alignSelf:"flex-start"}}>
-          <span style={{fontSize:16,color:"#888"}}>⏱ {curTourStop?.t}</span>
-          <span style={{fontSize:16,fontWeight:800,color:getDelayColor(delay)}}>{getDelayText(delay)}</span>
-        </div>
-
-        {curStopWarn&&(
-          <div style={{background:"rgba(243,156,18,.1)",border:"1px solid rgba(243,156,18,.3)",borderRadius:14,padding:"12px 16px",marginBottom:20,fontSize:14,color:"#F39C12",lineHeight:1.5}}>
-            {curStopWarn}
-          </div>
-        )}
-
-        {/* Stop Strip */}
-        <div style={{display:"flex",overflowX:"auto",paddingBottom:8,marginBottom:20,gap:0}}>
-          {activeTour.stops.map((s,i)=>{
-            const st=getStop(s.id);
-            return (
-              <div key={i} style={{display:"flex",alignItems:"center",flexShrink:0}}>
-                <div style={{display:"flex",flexDirection:"column",alignItems:"center",minWidth:54}}>
-                  <div style={{width:12,height:12,borderRadius:"50%",marginBottom:4,background:i<stopIdx?"#2ECC71":i===stopIdx?"#E8C84A":"rgba(255,255,255,.12)",boxShadow:i===stopIdx?"0 0 12px #E8C84A":"none"}}/>
-                  <div style={{fontSize:9,color:i===stopIdx?"#E8C84A":i<stopIdx?"#2ECC71":"#555",textAlign:"center",maxWidth:50,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{st.short}</div>
-                  <div style={{fontSize:8,color:"#444",marginTop:1}}>{s.t}</div>
-                </div>
-                {i<activeTour.stops.length-1&&<div style={{width:10,height:2,background:i<stopIdx?"rgba(46,204,113,.4)":"rgba(255,255,255,.06)",marginBottom:18}}/>}
-              </div>
-            );
-          })}
-        </div>
-
-        <button onClick={handleStopConfirm} style={{width:"100%",background:"rgba(255,255,255,.06)",border:"2px solid rgba(255,255,255,.15)",borderRadius:18,padding:"20px",fontSize:16,color:"#C0CAD8",fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif",marginBottom:12}}>
-          ✓ Halt manuell bestätigen
-        </button>
-        <div style={{fontSize:12,color:"#444",textAlign:"center"}}>📡 GPS bestätigt automatisch</div>
-      </div>
-
-      {/* Bottom Verspätungsbalken */}
-      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:520,background:"#0d1520",borderTop:"1px solid rgba(255,255,255,.08)",padding:"12px 20px 28px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <div style={{fontSize:13,color:"#888"}}>
-          Nächster Halt <span style={{color:"#fff",fontWeight:800}}>{curStop?.short}</span> · {curTourStop?.t}
-        </div>
-        <div style={{fontSize:16,fontWeight:800,color:getDelayColor(delay)}}>{getDelayText(delay)}</div>
-      </div>
-
-      {gpsBanner&&(
-        <div style={{position:"fixed",top:80,left:"50%",transform:"translateX(-50%)",background:"#1a3a2a",border:"2px solid #2ECC71",borderRadius:16,padding:"12px 20px",display:"flex",alignItems:"center",gap:10,zIndex:100,animation:"slideUp .3s ease",maxWidth:340}}>
-          <span style={{fontSize:20}}>✓</span>
-          <div>
-            <div style={{fontSize:13,color:"#2ECC71",fontWeight:800}}>GPS — Halt bestätigt</div>
-            <div style={{fontSize:12,color:"#aaa"}}>{gpsBanner}</div>
-          </div>
-          <button onClick={()=>setGpsBanner(null)} style={{background:"transparent",border:"none",color:"#666",fontSize:12,cursor:"pointer",fontFamily:"'Nunito',sans-serif",marginLeft:"auto"}}>Korrigieren</button>
-        </div>
-      )}
-      <LSButton/>
+      {activeTour.note&&<div style={{background:"rgba(243,156,18,.08)",border:"1px solid rgba(243,156,18,.2)",borderRadius:12,padding:"10px 14px",marginBottom:14,fontSize:13,color:"#F39C12"}}>{activeTour.note}</div>}
+      <div style={{marginBottom:16}}>{activeTour.stops.map((s,i)=>{const st=getStop(s.id);const done=i<stopIdx,active=i===stopIdx;return(<div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:i<activeTour.stops.length-1?"1px solid rgba(255,255,255,.04)":"none",opacity:done?.6:1}}><div style={{width:10,height:10,borderRadius:"50%",flexShrink:0,background:done?"#2ECC71":active?"#E8C84A":"rgba(255,255,255,.12)",boxShadow:active?"0 0 10px #E8C84A":"none"}}/><div style={{flex:1}}><span style={{fontSize:13,color:active?"#E8C84A":done?"#2ECC71":"#888",fontWeight:active?800:600}}>{st.name||st.short||"—"}</span><span style={{fontSize:11,color:"#444",marginLeft:8}}>{s.t}</span></div>{!done&&st?.lat&&<NavBtn stop={st} small/>}{done&&<span style={{fontSize:12,color:"#2ECC71"}}>✓</span>}</div>);})}</div>
+      {showTourDone?<div style={{background:"rgba(46,204,113,.1)",border:"2px solid #2ECC71",borderRadius:18,padding:20,textAlign:"center",animation:"fadeUp .3s ease"}}><div style={{fontSize:20,marginBottom:8}}>🏁</div><div style={{fontSize:16,fontWeight:800,color:"#2ECC71",marginBottom:6}}>Letzte Haltestelle erreicht</div><div style={{fontSize:13,color:"#888",marginBottom:16}}>{activeTour.label}</div><button onClick={handleTourAbgeschlossen} style={{width:"100%",background:"#2ECC71",border:"none",borderRadius:14,padding:"16px",fontSize:16,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif",color:"#0B0F1A"}}>✓ Tour abgeschlossen</button></div>:<button onClick={handleStopConfirm} style={{width:"100%",background:"rgba(255,255,255,.06)",border:"2px solid rgba(255,255,255,.15)",borderRadius:18,padding:"18px",fontSize:15,color:"#C0CAD8",fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>✓ Halt manuell bestätigen</button>}
+      <div style={{fontSize:12,color:"#444",textAlign:"center",marginTop:8}}>📡 GPS bestätigt automatisch</div>
     </div>
-  );
+    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:520,background:"#0d1520",borderTop:"1px solid rgba(255,255,255,.08)",padding:"12px 20px 28px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:13,color:"#888"}}>Halt <span style={{color:"#fff",fontWeight:800}}>{curStop?.short}</span> · {curTourStop?.t}</div><div style={{fontSize:16,fontWeight:800,color:getDelayColor(delay)}}>{!curTourStop?.t?.startsWith("~")?getDelayText(delay):""}</div></div>
+    {gpsBanner&&<div style={{position:"fixed",top:80,left:"50%",transform:"translateX(-50%)",background:"#1a3a2a",border:"2px solid #2ECC71",borderRadius:16,padding:"12px 20px",display:"flex",alignItems:"center",gap:10,zIndex:100,animation:"slideUp .3s ease",maxWidth:340}}><span style={{fontSize:20}}>✓</span><div><div style={{fontSize:13,color:"#2ECC71",fontWeight:800}}>GPS — Halt bestätigt</div><div style={{fontSize:12,color:"#aaa"}}>{gpsBanner}</div></div></div>}
+    <LSButton/>
+  </div>;
 
-  // ── LAYER 1: TAGESPLAN ──────────────────────────────────────
-  return (
-    <div style={{fontFamily:"'Nunito',sans-serif",background:"#0B0F1A",minHeight:"100vh",color:"#fff",maxWidth:520,margin:"0 auto",display:"flex",flexDirection:"column"}}>
-      <style>{FONTS}</style>
-
-      {/* Header */}
-      <div style={{padding:"16px 20px 12px",borderBottom:"1px solid rgba(255,255,255,.08)"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-          <div>
-            <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:26,color:"#E8C84A",letterSpacing:3,lineHeight:1}}>{driver.name}</div>
-            <div style={{fontSize:13,color:"#888",marginTop:3}}>Bus {driver.bus} · Dienst {plan?.dienst}</div>
-          </div>
-          <div style={{textAlign:"right"}}>
-            <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:26,color:"#E8C84A",letterSpacing:3}}>{time.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}</div>
-            <div style={{fontSize:12,color:"#555",marginTop:2}}>{plan?.datum}</div>
-          </div>
-        </div>
+  const fGroups=groupByKW(futureDays);
+  const pGroups=groupByKW(pastDays);
+  return <div style={{fontFamily:"'Nunito',sans-serif",background:"#0B0F1A",minHeight:"100vh",color:"#fff",maxWidth:520,margin:"0 auto",display:"flex",flexDirection:"column"}}>
+    <style>{FONTS}</style>
+    <div style={{padding:"16px 20px 12px",borderBottom:"1px solid rgba(255,255,255,.08)"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+        <div><div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:26,color:"#E8C84A",letterSpacing:3,lineHeight:1}}>{driver.name}</div><div style={{fontSize:13,color:"#888",marginTop:3}}>{plan?.fahrzeug||driver.bus} · {plan?.dienst||"—"}{plan?.code?` · Code: ${plan.code}`:""}</div></div>
+        <div style={{textAlign:"right"}}><div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:26,color:"#E8C84A",letterSpacing:3}}>{time.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}</div><div style={{fontSize:12,color:dayIsPast?"#E74C3C":dayIsToday?"#2ECC71":"#555",marginTop:2}}>{new Date(activeDayKey+"T12:00:00").toLocaleDateString("de-DE",{weekday:"long",day:"2-digit",month:"2-digit"})}{dayIsPast?" · VERGANGEN":dayIsToday?" · HEUTE":""}</div></div>
       </div>
-
-      <div style={{flex:1,overflowY:"auto",padding:"16px 20px 100px"}}>
-
-        {/* Anfahrt */}
-        {plan?.anfahrt && (
-          <button onClick={()=>setPhase("anfahrt")} style={{width:"100%",display:"flex",alignItems:"center",gap:14,background:anfahrtDone?"rgba(46,204,113,.06)":"rgba(232,200,74,.08)",border:anfahrtDone?"1px solid rgba(46,204,113,.2)":"2px solid rgba(232,200,74,.3)",borderRadius:16,padding:"16px 18px",cursor:"pointer",marginBottom:10,transition:"all .15s",textAlign:"left"}}>
-            <div style={{width:36,height:36,borderRadius:"50%",background:anfahrtDone?"#2ECC71":"#E8C84A",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0,color:"#fff"}}>
-              {anfahrtDone?"✓":"▶"}
-            </div>
-            <div style={{flex:1}}>
-              <div style={{fontSize:12,color:anfahrtDone?"#2ECC71":"#E8C84A",fontWeight:800,textTransform:"uppercase",letterSpacing:1}}>Anfahrt</div>
-              <div style={{fontSize:15,color:"#fff",fontWeight:700,marginTop:2}}>{plan.anfahrt.ziel}</div>
-            </div>
-            <div style={{fontSize:12,color:"#555"}}>Beginn {plan.dienstbeginn}</div>
-          </button>
-        )}
-
-        {/* Touren */}
-        {touren.map((t,i)=>{
-          const status = getTourStatus(t,i);
-          const von = getStop(t.vonId);
-          const nach = getStop(t.nachId);
-          return (
-            <button key={t.id} disabled={status==="locked"} onClick={()=>{if(status==="active"||status==="done"){setActiveIdx(i);setStopIdx(doneTours.includes(t.id)?0:0);setPhase("tour");}}} style={{width:"100%",display:"flex",alignItems:"center",gap:14,background:status==="done"?"rgba(46,204,113,.06)":status==="active"?"rgba(232,200,74,.08)":"rgba(255,255,255,.02)",border:status==="done"?"1px solid rgba(46,204,113,.2)":status==="active"?"2px solid rgba(232,200,74,.3)":"1px solid rgba(255,255,255,.05)",borderRadius:16,padding:"16px 18px",cursor:status==="locked"?"not-allowed":"pointer",marginBottom:10,transition:"all .15s",textAlign:"left",opacity:status==="locked"?.5:1}}>
-              <div style={{width:36,height:36,borderRadius:"50%",background:status==="done"?"#2ECC71":status==="active"?"#E8C84A":"rgba(255,255,255,.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0,color:status==="done"?"#fff":status==="active"?"#0B0F1A":"#666"}}>
-                {status==="done"?"✓":status==="active"?"▶":"🔒"}
-              </div>
-              <div style={{flex:1}}>
-                <div style={{fontSize:15,color:"#fff",fontWeight:800}}>{von.short} → {nach.short}</div>
-                <div style={{fontSize:13,color:"#888",marginTop:2}}>{t.dep} – {t.arr}</div>
-              </div>
-              {status==="active"&&<div style={{fontSize:11,color:"#E8C84A",fontWeight:800,background:"rgba(232,200,74,.15)",borderRadius:8,padding:"3px 8px"}}>JETZT</div>}
-            </button>
-          );
-        })}
-
-        {/* Rückfahrt */}
-        {plan?.rueckfahrt && (
-          <div style={{width:"100%",display:"flex",alignItems:"center",gap:14,background:"rgba(52,152,219,.06)",border:"1px solid rgba(52,152,219,.2)",borderRadius:16,padding:"16px 18px",marginBottom:10}}>
-            <div style={{width:36,height:36,borderRadius:"50%",background:"#3498DB",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0,color:"#fff"}}>🏁</div>
-            <div style={{flex:1}}>
-              <div style={{fontSize:12,color:"#3498DB",fontWeight:800,textTransform:"uppercase",letterSpacing:1}}>Rückfahrt</div>
-              <div style={{fontSize:15,color:"#fff",fontWeight:700,marginTop:2}}>{plan.rueckfahrt.ziel}</div>
-            </div>
-            <div style={{fontSize:12,color:"#555"}}>bis {plan.dienstende} Uhr</div>
-          </div>
-        )}
-
-        {/* Dienstende */}
-        {plan?.dienstende && (
-          <div style={{textAlign:"center",padding:"12px 0",fontSize:13,color:"#444"}}>
-            Dienstende: {plan.dienstende} Uhr
-          </div>
-        )}
-
-        {/* Sondermeldungen */}
-        <div style={{marginTop:8}}>
-          {SONDERMELDUNGEN.map(a=>(
-            <div key={a.id} style={{background:a.type==="warn"?"rgba(243,156,18,.08)":"rgba(52,152,219,.08)",border:`1px solid ${a.type==="warn"?"rgba(243,156,18,.2)":"rgba(52,152,219,.2)"}`,borderRadius:12,padding:"10px 14px",marginBottom:8}}>
-              <div style={{fontWeight:800,fontSize:13,color:a.type==="warn"?"#F39C12":"#3498DB",marginBottom:3,animation:a.isNew?"blink 1s infinite":""}}>{a.title} {a.isNew&&"🔴"}</div>
-              <div style={{fontSize:12,color:"#C0CAD8",lineHeight:1.5}}>{a.text}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Qualität */}
-        <button onClick={()=>setShowQ(!showQ)} style={{width:"100%",marginTop:8,padding:"14px 16px",borderRadius:14,background:"rgba(110,30,110,.15)",border:"1px solid rgba(110,30,110,.3)",color:"#C090C0",fontFamily:"'Nunito',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>
-          📋 Qualitätsanforderungen RVO <span style={{marginLeft:"auto"}}>{showQ?"▲":"▼"}</span>
-        </button>
-        {showQ&&(
-          <div style={{marginTop:8,animation:"fadeUp .2s ease"}}>
-            {POENALE.map((p,i)=>(
-              <div key={i} style={{background:`rgba(${p.sev==="high"?"231,76,60":p.sev==="medium"?"243,156,18":"46,204,113"},.06)`,border:`1px solid rgba(${p.sev==="high"?"231,76,60":p.sev==="medium"?"243,156,18":"46,204,113"},.2)`,borderLeft:`4px solid ${p.sev==="high"?"#E74C3C":p.sev==="medium"?"#F39C12":"#2ECC71"}`,borderRadius:10,padding:"10px 14px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div style={{fontSize:13,fontWeight:700,color:"#fff"}}>{p.rule}</div>
-                <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:26,color:p.sev==="high"?"#E74C3C":p.sev==="medium"?"#F39C12":"#2ECC71",flexShrink:0}}>{p.amount}€</div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Bottom Bar */}
-      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:520,background:"#0d1520",borderTop:"1px solid rgba(255,255,255,.08)",padding:"12px 20px 28px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <div style={{fontSize:12,color:"#555"}}>{driver.name} · {driver.bus}</div>
-        <button onClick={onLogout} style={{background:"transparent",border:"none",color:"#444",fontSize:12,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>Abmelden</button>
-      </div>
-
-      {gpsBanner&&(
-        <div style={{position:"fixed",top:80,left:"50%",transform:"translateX(-50%)",background:"#1a3a2a",border:"2px solid #2ECC71",borderRadius:16,padding:"12px 20px",display:"flex",alignItems:"center",gap:10,zIndex:100,animation:"slideUp .3s ease",maxWidth:340}}>
-          <span style={{fontSize:20}}>✓</span>
-          <div>
-            <div style={{fontSize:13,color:"#2ECC71",fontWeight:800}}>GPS — Angekommen</div>
-            <div style={{fontSize:12,color:"#aaa"}}>{gpsBanner}</div>
-          </div>
-        </div>
-      )}
-
-      <LSButton/>
     </div>
-  );
+    {dayIsPast&&<div style={{background:"rgba(231,76,60,.08)",borderBottom:"1px solid rgba(231,76,60,.2)",padding:"10px 20px",fontSize:12,color:"#E74C3C",fontWeight:700,textAlign:"center"}}>📂 Archiv — nur lesbar</div>}
+    <div style={{flex:1,overflowY:"auto",padding:"14px 20px 100px"}}>
+      {Object.entries(fGroups).map(([kw,dks])=><div key={kw} style={{marginBottom:12}}><div style={{fontSize:11,color:"#E8C84A",textTransform:"uppercase",letterSpacing:2,marginBottom:6}}>{kw}</div>{dks.map(dk=><DayCard key={dk} dk={dk}/>)}</div>)}
+      {Object.keys(pGroups).length>0&&<><div style={{fontSize:11,color:"#333",textTransform:"uppercase",letterSpacing:2,margin:"10px 0 6px"}}>Vergangen</div>{Object.entries(pGroups).map(([kw,dks])=><div key={kw} style={{marginBottom:8}}><div style={{fontSize:10,color:"#333",letterSpacing:2,marginBottom:4}}>{kw}</div>{dks.map(dk=><DayCard key={dk} dk={dk}/>)}</div>)}</>}
+      <div style={{height:1,background:"rgba(255,255,255,.06)",marginBottom:14}}/>
+      {plan?.dienst==="FREI"&&<div style={{textAlign:"center",padding:"40px 0",color:"#555",fontSize:18}}>🎉 Heute frei</div>}
+      {plan?.anfahrt&&<button onClick={!dayIsPast?()=>setPhase("anfahrt"):undefined} disabled={dayIsPast} style={{width:"100%",display:"flex",alignItems:"center",gap:14,background:todayAnfahrt?"rgba(46,204,113,.06)":dayIsPast?"rgba(255,255,255,.02)":"rgba(232,200,74,.08)",border:todayAnfahrt?"1px solid rgba(46,204,113,.2)":dayIsPast?"1px solid rgba(255,255,255,.04)":"2px solid rgba(232,200,74,.3)",borderRadius:16,padding:"14px 18px",cursor:dayIsPast?"default":"pointer",marginBottom:10,textAlign:"left",opacity:dayIsPast?.7:1}}><div style={{width:36,height:36,borderRadius:"50%",background:todayAnfahrt?"#2ECC71":dayIsPast?"#333":"#E8C84A",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0,color:"#fff"}}>{todayAnfahrt?"✓":"▶"}</div><div style={{flex:1}}><div style={{fontSize:12,color:todayAnfahrt?"#2ECC71":dayIsPast?"#555":"#E8C84A",fontWeight:800,textTransform:"uppercase",letterSpacing:1}}>Anfahrt · Bus abholen</div><div style={{fontSize:15,color:dayIsPast?"#555":"#fff",fontWeight:700,marginTop:2}}>{plan.anfahrt.ziel}</div></div>{!dayIsPast&&plan.anfahrt.stopId&&<NavBtn stop={getStop(plan.anfahrt.stopId)} small/>}</button>}
+      {touren.map((t,i)=>{const status=getTourStatus(t,i);const archived=status==="archiv",done=status==="done",active=status==="active",locked=status==="locked";return <button key={t.id} disabled={locked||archived} onClick={()=>{if(active||done){setActiveIdx(i);setStopIdx(0);setPhase("tour");}}} style={{width:"100%",display:"flex",alignItems:"flex-start",gap:14,background:done||archived?"rgba(46,204,113,.04)":active?"rgba(232,200,74,.08)":"rgba(255,255,255,.02)",border:done||archived?"1px solid rgba(46,204,113,.15)":active?"2px solid rgba(232,200,74,.3)":"1px solid rgba(255,255,255,.04)",borderRadius:16,padding:"14px 18px",cursor:locked||archived?"default":"pointer",marginBottom:10,textAlign:"left",opacity:locked?.4:archived?.6:1}}><div style={{width:36,height:36,borderRadius:"50%",background:done||archived?"#2ECC71":active?"#E8C84A":"rgba(255,255,255,.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0,color:done||archived?"#fff":active?"#0B0F1A":"#555",marginTop:2}}>{done||archived?"✓":active?"▶":"🔒"}</div><div style={{flex:1}}><div style={{fontSize:15,color:done||archived?"#2ECC71":active?"#fff":"#666",fontWeight:800}}>{t.label}</div><div style={{fontSize:13,color:"#555",marginTop:2}}>{t.dep} – {t.arr}</div>{t.note&&<div style={{fontSize:12,color:"#F39C12",marginTop:4}}>{t.note}</div>}{(active||done||archived)&&t.stops.length>1&&<div style={{marginTop:10,display:"flex",flexDirection:"column",gap:5}}>{t.stops.map((s,si)=>{const st=getStop(s.id);return(<div key={si} style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:11,color:"#444",width:36,flexShrink:0}}>{s.t}</span><span style={{fontSize:12,color:done||archived?"#555":"#C0CAD8",flex:1}}>{st.name||st.short||"—"}</span>{!done&&!archived&&st?.lat&&<NavBtn stop={st} small/>}</div>);})}</div>}</div>{active&&<div style={{fontSize:11,color:"#E8C84A",fontWeight:800,background:"rgba(232,200,74,.15)",borderRadius:8,padding:"3px 8px",flexShrink:0}}>JETZT</div>}</button>;})}
+      {plan?.rueckfahrt&&<div style={{width:"100%",display:"flex",alignItems:"center",gap:14,background:"rgba(52,152,219,.06)",border:"1px solid rgba(52,152,219,.2)",borderRadius:16,padding:"14px 18px",marginBottom:10}}><div style={{width:36,height:36,borderRadius:"50%",background:"#3498DB",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0,color:"#fff"}}>🏁</div><div style={{flex:1}}><div style={{fontSize:12,color:"#3498DB",fontWeight:800,textTransform:"uppercase",letterSpacing:1}}>Rückfahrt</div><div style={{fontSize:15,color:dayIsPast?"#555":"#fff",fontWeight:700,marginTop:2}}>{plan.rueckfahrt.ziel}</div></div><div style={{fontSize:12,color:"#555"}}>bis {plan.dienstende}</div></div>}
+      <div style={{marginTop:8}}>{SONDERMELDUNGEN.map(a=><div key={a.id} style={{background:"rgba(52,152,219,.08)",border:"1px solid rgba(52,152,219,.2)",borderRadius:12,padding:"10px 14px",marginBottom:8}}><div style={{fontWeight:800,fontSize:13,color:"#3498DB",marginBottom:3}}>{a.title}</div><div style={{fontSize:12,color:"#C0CAD8",lineHeight:1.5}}>{a.text}</div></div>)}</div>
+      <button onClick={()=>setShowQ(!showQ)} style={{width:"100%",marginTop:8,padding:"14px 16px",borderRadius:14,background:"rgba(110,30,110,.15)",border:"1px solid rgba(110,30,110,.3)",color:"#C090C0",fontFamily:"'Nunito',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>📋 Qualitätsanforderungen RVO <span style={{marginLeft:"auto"}}>{showQ?"▲":"▼"}</span></button>
+      {showQ&&<div style={{marginTop:8,animation:"fadeUp .2s ease"}}>{POENALE.map((p,i)=><div key={i} style={{background:`rgba(${p.sev==="high"?"231,76,60":p.sev==="medium"?"243,156,18":"46,204,113"},.06)`,border:`1px solid rgba(${p.sev==="high"?"231,76,60":p.sev==="medium"?"243,156,18":"46,204,113"},.2)`,borderLeft:`4px solid ${p.sev==="high"?"#E74C3C":p.sev==="medium"?"#F39C12":"#2ECC71"}`,borderRadius:10,padding:"10px 14px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:13,fontWeight:700,color:"#fff"}}>{p.rule}</div><div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:26,color:p.sev==="high"?"#E74C3C":p.sev==="medium"?"#F39C12":"#2ECC71",flexShrink:0}}>{p.amount}€</div></div>)}</div>}
+    </div>
+    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:520,background:"#0d1520",borderTop:"1px solid rgba(255,255,255,.08)",padding:"12px 20px 28px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:12,color:"#555"}}>{driver.name} · {plan?.fahrzeug||driver.bus}</div><button onClick={onLogout} style={{background:"transparent",border:"none",color:"#444",fontSize:12,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>Abmelden</button></div>
+    {gpsBanner&&<div style={{position:"fixed",top:80,left:"50%",transform:"translateX(-50%)",background:"#1a3a2a",border:"2px solid #2ECC71",borderRadius:16,padding:"12px 20px",display:"flex",alignItems:"center",gap:10,zIndex:100,animation:"slideUp .3s ease",maxWidth:340}}><span style={{fontSize:20}}>✓</span><div><div style={{fontSize:13,color:"#2ECC71",fontWeight:800}}>GPS — Angekommen</div><div style={{fontSize:12,color:"#aaa"}}>{gpsBanner}</div></div></div>}
+    <LSButton/>
+  </div>;
 }
 
-// ══════════════════════════════════════════════════════════════
-// DISPONENT APP
-// ══════════════════════════════════════════════════════════════
-function DisponentApp({ onLogout }) {
-  const [time,setTime]=useState(new Date());
-  const [tab,setTab]=useState("live");
-  const [alerts,setAlerts]=useState(SONDERMELDUNGEN);
-  const [newMsg,setNewMsg]=useState({title:"",text:""});
-  const [lsLog,setLsLog]=useState([
-    {fahrer:"Gerhard Geschwinder",bus:"ED DB 94",time:"06:31",pos:"Zwischen Grub und Heimstetten"}
-  ]);
-
+function DisponentApp({onLogout}){
+  const[time,setTime]=useState(new Date());
+  const[tab,setTab]=useState("live");
+  const[alerts,setAlerts]=useState(SONDERMELDUNGEN);
+  const[newMsg,setNewMsg]=useState({title:"",text:""});
+  const[lsLog]=useState([{fahrer:"Gerhard Geschwinder",bus:"ED DB 74",time:"06:31",pos:"Zwischen Grub und Heimstetten"}]);
+  const today=todayStr();
   useEffect(()=>{const x=setInterval(()=>setTime(new Date()),1000);return()=>clearInterval(x);},[]);
-
   const TABS=[["live","🗺️","Live"],["touren","🚌","Touren"],["meldungen","⚠️","Meldungen"],["leitstelle","📞","Leitstelle"]];
-
-  return (
-    <div style={{fontFamily:"'Nunito',sans-serif",background:"#f0f4f8",minHeight:"100vh",maxWidth:960,margin:"0 auto"}}>
-      <style>{FONTS}</style>
-      <div style={{background:"linear-gradient(135deg,#1a2a4a,#0d1b33)",padding:"14px 24px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <div>
-          <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:26,color:"#E8C84A",letterSpacing:3}}>SEV CONNECT · DISPONENT</div>
-          <div style={{fontSize:11,color:"#4a6fa5",letterSpacing:1,textTransform:"uppercase"}}>S2 · Berg am Laim ↔ Markt Schwaben · 15.05.2026</div>
-        </div>
-        <div style={{display:"flex",alignItems:"center",gap:16}}>
-          <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:24,color:"#E8C84A",letterSpacing:3}}>{time.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}</div>
-          <button onClick={onLogout} style={{background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.15)",borderRadius:10,padding:"6px 14px",color:"#aaa",fontSize:12,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>Abmelden</button>
-        </div>
-      </div>
-
-      <div style={{background:"#fff",borderBottom:"2px solid #e8ecf0",display:"flex"}}>
-        {TABS.map(([id,ic,lb])=>(
-          <button key={id} onClick={()=>setTab(id)} style={{flex:1,padding:"12px 6px",border:"none",background:"transparent",borderBottom:tab===id?"3px solid #1a6fb5":"3px solid transparent",color:tab===id?"#1a6fb5":"#888",fontFamily:"'Nunito',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>{ic} {lb}</button>
-        ))}
-      </div>
-
-      <div style={{padding:20}}>
-
-        {tab==="live"&&(
-          <div>
-            <div style={{fontSize:13,color:"#999",textTransform:"uppercase",letterSpacing:1,marginBottom:16}}>Live Status — Alle Fahrer</div>
-            {DRIVERS.map(d=>{
-              const plan = DIENSTPLAENE[d.name];
-              const isActive = plan?.touren?.length > 0;
-              return (
-                <div key={d.id} style={{background:"#fff",border:"1px solid #e8ecf0",borderLeft:`4px solid ${isActive?"#2ECC71":"#ccc"}`,borderRadius:14,padding:"14px 18px",marginBottom:10,display:"flex",alignItems:"center",gap:14}}>
-                  <div style={{width:44,height:44,borderRadius:"50%",background:"#6E1E6E",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Bebas Neue',sans-serif",fontSize:16,color:"#E8C84A",flexShrink:0}}>{d.avatar}</div>
-                  <div style={{flex:1}}>
-                    <div style={{fontWeight:800,fontSize:15}}>{d.name}</div>
-                    <div style={{fontSize:12,color:"#999",marginTop:2}}>Bus: {d.bus} · Dienst: {plan?.dienst||"—"}</div>
-                    {isActive&&<div style={{fontSize:12,color:"#2ECC71",marginTop:2}}>● Aktiv · {plan.dienstbeginn} – {plan.dienstende} Uhr</div>}
-                  </div>
-                  <button onClick={()=>window.open(`tel:+${d.tel}`,"_blank")} style={{background:"#3498DB",border:"none",borderRadius:10,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:16}}>📞</button>
-                  <button onClick={()=>window.open(`https://wa.me/${d.tel}`,"_blank")} style={{background:"#25D366",border:"none",borderRadius:10,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:16}}>💬</button>
-                </div>
-              );
-            })}
-            {lsLog.length>0&&(
-              <div style={{background:"#fff",border:"2px solid #E74C3C",borderRadius:14,padding:"14px 18px",marginTop:16}}>
-                <div style={{fontWeight:800,fontSize:14,color:"#E74C3C",marginBottom:10}}>🔴 Leitstelle angerufen</div>
-                {lsLog.map((l,i)=>(
-                  <div key={i} style={{fontSize:13,color:"#555",padding:"6px 0",borderBottom:i<lsLog.length-1?"1px solid #f0f0f0":"none"}}>
-                    <span style={{fontWeight:700,color:"#333"}}>{l.fahrer}</span> · {l.bus} · {l.time} Uhr · {l.pos}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {tab==="touren"&&(
-          <div>
-            <div style={{fontSize:13,color:"#999",textTransform:"uppercase",letterSpacing:1,marginBottom:16}}>Fahraufträge heute — 15.05.2026</div>
-            {Object.entries(DIENSTPLAENE).map(([name,plan])=>(
-              <div key={name} style={{background:"#fff",border:"1px solid #e8ecf0",borderRadius:14,padding:"14px 18px",marginBottom:16}}>
-                <div style={{fontWeight:800,fontSize:15,marginBottom:8,color:"#1a2a4a"}}>{name} · {plan.dienst}</div>
-                {plan.touren.map((t,i)=>{
-                  const von=getStop(t.vonId),nach=getStop(t.nachId);
-                  return (
-                    <div key={t.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<plan.touren.length-1?"1px solid #f5f5f5":"none"}}>
-                      <div style={{width:28,height:28,borderRadius:"50%",background:"#f0f4f8",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#6E1E6E",flexShrink:0}}>{i+1}</div>
-                      <div style={{flex:1,fontSize:13}}>
-                        <span style={{fontWeight:700}}>{von.short}</span> → <span style={{fontWeight:700}}>{nach.short}</span>
-                        <span style={{color:"#999",marginLeft:8}}>{t.dep} – {t.arr}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-                {plan.touren.length===0&&<div style={{fontSize:13,color:"#bbb"}}>Keine Touren zugewiesen</div>}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {tab==="meldungen"&&(
-          <div>
-            <div style={{background:"#fff",border:"2px solid #1a6fb5",borderRadius:16,padding:20,marginBottom:16}}>
-              <div style={{fontSize:12,color:"#1a6fb5",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:14}}>Neue Meldung senden</div>
-              <input value={newMsg.title} onChange={e=>setNewMsg(p=>({...p,title:e.target.value}))} placeholder="Titel..." style={{width:"100%",padding:"10px 14px",borderRadius:10,border:"2px solid #e8ecf0",fontSize:14,fontFamily:"'Nunito',sans-serif",background:"#f8fafc",outline:"none",marginBottom:10}}/>
-              <textarea value={newMsg.text} onChange={e=>setNewMsg(p=>({...p,text:e.target.value}))} placeholder="Details..." rows={3} style={{width:"100%",padding:"10px 14px",borderRadius:10,border:"2px solid #e8ecf0",fontSize:14,fontFamily:"'Nunito',sans-serif",background:"#f8fafc",outline:"none",resize:"vertical",marginBottom:12}}/>
-              <button onClick={()=>{if(!newMsg.title)return;setAlerts(p=>[{id:Date.now(),type:"warn",title:newMsg.title,text:newMsg.text,isNew:true,haltId:null},...p]);setNewMsg({title:"",text:""}); }} style={{width:"100%",background:"#1a6fb5",border:"none",borderRadius:12,padding:"14px",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>
-                🔴 Meldung senden — erscheint blinkend bei Fahrern
-              </button>
-            </div>
-            {alerts.map(a=>(
-              <div key={a.id} style={{background:"#fff",border:"1px solid #e8ecf0",borderLeft:`4px solid ${a.type==="warn"?"#F39C12":"#3498DB"}`,borderRadius:14,padding:"14px 18px",marginBottom:10}}>
-                <div style={{fontWeight:800,fontSize:14,color:a.type==="warn"?"#F39C12":"#3498DB",marginBottom:4}}>{a.title} {a.isNew&&<span style={{fontSize:11,background:"#E74C3C",color:"#fff",borderRadius:6,padding:"2px 6px",marginLeft:6}}>NEU</span>}</div>
-                <div style={{fontSize:13,color:"#777"}}>{a.text}</div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {tab==="leitstelle"&&(
-          <div>
-            <div style={{background:"#fff",border:"2px solid #E74C3C",borderRadius:16,padding:20,marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div>
-                <div style={{fontWeight:800,fontSize:16}}>RVO-Leitstelle</div>
-                <div style={{fontSize:14,color:"#2ECC71",marginTop:2}}>● 24/7 · 089 55164 120</div>
-                <div style={{fontSize:11,color:"#bbb",marginTop:2}}>Nummer nicht an Dritte weitergeben</div>
-              </div>
-              <button onClick={callLS} style={{background:"#E74C3C",border:"none",borderRadius:14,padding:"14px 20px",color:"#fff",fontSize:20,cursor:"pointer"}}>📞</button>
-            </div>
-            <div style={{fontSize:13,color:"#999",textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Leitstellen-Anrufe heute</div>
-            {lsLog.map((l,i)=>(
-              <div key={i} style={{background:"#fff",border:"1px solid #e8ecf0",borderLeft:"4px solid #E74C3C",borderRadius:14,padding:"14px 18px",marginBottom:10}}>
-                <div style={{fontWeight:800,fontSize:14,color:"#E74C3C",marginBottom:4}}>🔴 {l.fahrer} · {l.bus}</div>
-                <div style={{fontSize:13,color:"#777"}}>{l.time} Uhr · {l.pos}</div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+  return <div style={{fontFamily:"'Nunito',sans-serif",background:"#f0f4f8",minHeight:"100vh",maxWidth:960,margin:"0 auto"}}>
+    <style>{FONTS}</style>
+    <div style={{background:"linear-gradient(135deg,#1a2a4a,#0d1b33)",padding:"14px 24px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+      <div><div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:26,color:"#E8C84A",letterSpacing:3}}>SEV CONNECT · DISPONENT</div><div style={{fontSize:11,color:"#4a6fa5",letterSpacing:1,textTransform:"uppercase"}}>KW21–22 · RVO / DB · v4.6</div></div>
+      <div style={{display:"flex",alignItems:"center",gap:16}}><div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:24,color:"#E8C84A",letterSpacing:3}}>{time.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}</div><button onClick={onLogout} style={{background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.15)",borderRadius:10,padding:"6px 14px",color:"#aaa",fontSize:12,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>Abmelden</button></div>
     </div>
-  );
+    <div style={{background:"#fff",borderBottom:"2px solid #e8ecf0",display:"flex"}}>{TABS.map(([id,ic,lb])=><button key={id} onClick={()=>setTab(id)} style={{flex:1,padding:"12px 6px",border:"none",background:"transparent",borderBottom:tab===id?"3px solid #1a6fb5":"3px solid transparent",color:tab===id?"#1a6fb5":"#888",fontFamily:"'Nunito',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>{ic} {lb}</button>)}</div>
+    <div style={{padding:20}}>
+      {tab==="live"&&<div><div style={{fontSize:13,color:"#999",textTransform:"uppercase",letterSpacing:1,marginBottom:16}}>Live Status</div>{DRIVERS.map(d=>{const plans=DIENSTPLAENE[d.name]||{};const plan=plans[today];const isActive=plan?.touren?.length>0;return(<div key={d.id} style={{background:"#fff",border:"1px solid #e8ecf0",borderLeft:`4px solid ${isActive?"#2ECC71":"#ccc"}`,borderRadius:14,padding:"14px 18px",marginBottom:10,display:"flex",alignItems:"center",gap:14}}><div style={{width:44,height:44,borderRadius:"50%",background:"#6E1E6E",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Bebas Neue',sans-serif",fontSize:16,color:"#E8C84A",flexShrink:0}}>{d.avatar}</div><div style={{flex:1}}><div style={{fontWeight:800,fontSize:15}}>{d.name}</div><div style={{fontSize:12,color:"#999",marginTop:2}}>{plan?.fahrzeug||d.bus} · {plan?.dienst||"—"}{plan?.code?` · ${plan.code}`:""}</div>{isActive?<div style={{fontSize:12,color:"#2ECC71",marginTop:2}}>● Aktiv · {plan.dienstbeginn}–{plan.dienstende}</div>:<div style={{fontSize:12,color:"#bbb",marginTop:2}}>Kein Dienst heute</div>}</div><button onClick={()=>window.open(`tel:+${d.tel}`,"_blank")} style={{background:"#3498DB",border:"none",borderRadius:10,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:16}}>📞</button><button onClick={()=>window.open(`https://wa.me/${d.tel}`,"_blank")} style={{background:"#25D366",border:"none",borderRadius:10,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:16}}>💬</button></div>);})}</div>}
+      {tab==="touren"&&<div><div style={{fontSize:13,color:"#999",textTransform:"uppercase",letterSpacing:1,marginBottom:16}}>Fahraufträge heute</div>{Object.entries(DIENSTPLAENE).map(([name,plans])=>{const plan=plans[today];if(!plan)return null;return(<div key={name} style={{background:"#fff",border:"1px solid #e8ecf0",borderRadius:14,padding:"14px 18px",marginBottom:16}}><div style={{fontWeight:800,fontSize:15,marginBottom:4,color:"#1a2a4a"}}>{name}</div><div style={{fontSize:12,color:"#888",marginBottom:10}}>{plan.fahrzeug} · {plan.dienst}{plan.code?` · ${plan.code}`:""}</div>{plan.touren.map((t,i)=><div key={t.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<plan.touren.length-1?"1px solid #f5f5f5":"none"}}><div style={{width:28,height:28,borderRadius:"50%",background:"#f0f4f8",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#6E1E6E",flexShrink:0}}>{i+1}</div><div style={{flex:1,fontSize:13}}><span style={{fontWeight:700}}>{t.label}</span><span style={{color:"#999",marginLeft:8}}>{t.dep}–{t.arr}</span></div></div>)}{plan.touren.length===0&&<div style={{fontSize:13,color:"#bbb"}}>Kein Dienst heute</div>}</div>);})}</div>}
+      {tab==="meldungen"&&<div><div style={{background:"#fff",border:"2px solid #1a6fb5",borderRadius:16,padding:20,marginBottom:16}}><input value={newMsg.title} onChange={e=>setNewMsg(p=>({...p,title:e.target.value}))} placeholder="Titel..." style={{width:"100%",padding:"10px 14px",borderRadius:10,border:"2px solid #e8ecf0",fontSize:14,fontFamily:"'Nunito',sans-serif",background:"#f8fafc",outline:"none",marginBottom:10}}/><textarea value={newMsg.text} onChange={e=>setNewMsg(p=>({...p,text:e.target.value}))} placeholder="Details..." rows={3} style={{width:"100%",padding:"10px 14px",borderRadius:10,border:"2px solid #e8ecf0",fontSize:14,fontFamily:"'Nunito',sans-serif",background:"#f8fafc",outline:"none",resize:"vertical",marginBottom:12}}/><button onClick={()=>{if(!newMsg.title)return;setAlerts(p=>[{id:Date.now(),type:"warn",title:newMsg.title,text:newMsg.text,isNew:true},...p]);setNewMsg({title:"",text:""});}} style={{width:"100%",background:"#1a6fb5",border:"none",borderRadius:12,padding:"14px",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>🔴 Meldung senden</button></div>{alerts.map(a=><div key={a.id} style={{background:"#fff",border:"1px solid #e8ecf0",borderLeft:`4px solid ${a.type==="warn"?"#F39C12":"#3498DB"}`,borderRadius:14,padding:"14px 18px",marginBottom:10}}><div style={{fontWeight:800,fontSize:14,color:a.type==="warn"?"#F39C12":"#3498DB",marginBottom:4}}>{a.title}</div><div style={{fontSize:13,color:"#777"}}>{a.text}</div></div>)}</div>}
+      {tab==="leitstelle"&&<div><div style={{background:"#fff",border:"2px solid #E74C3C",borderRadius:16,padding:20,marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontWeight:800,fontSize:16}}>RVO-Leitstelle</div><div style={{fontSize:14,color:"#2ECC71",marginTop:2}}>● 24/7 · 089 55164 120</div><div style={{fontSize:11,color:"#bbb",marginTop:2}}>Nummer nicht an Dritte weitergeben</div></div><button onClick={callLS} style={{background:"#E74C3C",border:"none",borderRadius:14,padding:"14px 20px",color:"#fff",fontSize:20,cursor:"pointer"}}>📞</button></div>{lsLog.map((l,i)=><div key={i} style={{background:"#fff",border:"1px solid #e8ecf0",borderLeft:"4px solid #E74C3C",borderRadius:14,padding:"14px 18px",marginBottom:10}}><div style={{fontWeight:800,fontSize:14,color:"#E74C3C",marginBottom:4}}>🔴 {l.fahrer} · {l.bus}</div><div style={{fontSize:13,color:"#777"}}>{l.time} Uhr · {l.pos}</div></div>)}</div>}
+    </div>
+  </div>;
 }
 
-// ── ROOT ─────────────────────────────────────────────────────────
-export default function App() {
-  const [view,setView]=useState("login"),[driver,setDriver]=useState(null);
-  return (
-    <div>
-      <style>{FONTS}</style>
-      {view==="login"    && <Login onDriver={d=>{setDriver(d);setView("driver");}} onDispatch={()=>setView("dispatch")}/>}
-      {view==="driver"   && <FahrerApp driver={driver} onLogout={()=>setView("login")}/>}
-      {view==="dispatch" && <DisponentApp onLogout={()=>setView("login")}/>}
-    </div>
-  );
+export default function App(){
+  const[view,setView]=useState("login"),[driver,setDriver]=useState(null);
+  return <div><style>{FONTS}</style>
+    {view==="login"&&<Login onDriver={d=>{setDriver(d);setView("driver");}} onDispatch={()=>setView("dispatch")}/>}
+    {view==="driver"&&<FahrerApp driver={driver} onLogout={()=>setView("login")}/>}
+    {view==="dispatch"&&<DisponentApp onLogout={()=>setView("login")}/>}
+  </div>;
 }
