@@ -10,9 +10,33 @@ const FONTS = `
 `;
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js').then(r=>console.log('SW:',r.scope)).catch(e=>console.log('SW fail:',e));});}
 
-const LEITSTELLE_TEL="08955164120",DISPATCH_PIN="1234",GPS_RADIUS_M=150;
+const LEITSTELLE_TEL="08955164120",GPS_RADIUS_M=150;
+const LOG_KEY="connect_log_v1";
+
+// ─── BEWEIS-LOG ─────────────────────────────────────────────
+// Speichert alle Bestätigungen, GPS-Prüfungen, Login/Logout etc.
+// Aktuell lokal in localStorage. Späterer Schritt: Backend (Supabase).
+const logEvent=(type,driver,data)=>{
+  try{
+    const entry={
+      ts:new Date().toISOString(),
+      tsLocal:new Date().toLocaleString("de-DE"),
+      type,
+      driver:driver||"—",
+      ...data
+    };
+    const raw=localStorage.getItem(LOG_KEY);
+    const log=raw?JSON.parse(raw):[];
+    log.push(entry);
+    // Cap bei 5000 Einträgen, ältere fallen raus
+    if(log.length>5000)log.splice(0,log.length-5000);
+    localStorage.setItem(LOG_KEY,JSON.stringify(log));
+  }catch(e){console.warn("Log fehlgeschlagen:",e);}
+};
+const getLog=()=>{try{return JSON.parse(localStorage.getItem(LOG_KEY)||"[]");}catch(e){return[];}};
+const clearLog=()=>{try{localStorage.removeItem(LOG_KEY);}catch(e){}};
 const DRIVERS=[{id:1,name:"Elisabeth Bachmeier",avatar:"EB",bus:"ED DB —",tel:"4917628200012"},{id:2,name:"Sebastian Deuschel",avatar:"SD",bus:"ED DB —",tel:"4915158530409"},{id:3,name:"Gerhard Geschwinder",avatar:"GG",bus:"ED DB —",tel:"4915163429782"}];
-const STOPS=[{id:1,name:"München Ostbahnhof Friedenstraße",short:"Ostbahnhof",lat:48.1276,lng:11.6077},{id:2,name:"München Ampfingstraße",short:"Ampfingstr.",lat:48.1285,lng:11.6180},{id:3,name:"München Berg am Laim (S)",short:"Berg am Laim",lat:48.1272,lng:11.6390},{id:4,name:"München Graf-Lehndorff-Straße",short:"Graf-Lehndorff",lat:48.1310,lng:11.6620},{id:5,name:"Feldkirchen (S)",short:"Feldkirchen",lat:48.1315,lng:11.7270},{id:6,name:"Heimstetten (S) Süd",short:"Heimstetten",lat:48.1362,lng:11.7510},{id:7,name:"Grub (S), Nord",short:"Grub",lat:48.1410,lng:11.7710},{id:8,name:"Poing (S), Nord",short:"Poing",lat:48.1720,lng:11.8100},{id:9,name:"Markt Schwaben (S)",short:"Markt Schwaben",lat:48.1930,lng:11.8680},{id:10,name:"Zamilastraße, München",short:"Zamilastr.",lat:48.1380,lng:11.6280},{id:20,name:"Anzing - Lärchenstr.",short:"Anzing",lat:48.1540,lng:11.8540},{id:21,name:"Poing - Anzinger Str.",short:"Poing Anzinger",lat:48.1680,lng:11.8130},{id:22,name:"Poing - Mitterfeldring",short:"Poing Mitterfeld",lat:48.1690,lng:11.8110},{id:23,name:"Poing - Claudiusstr.",short:"Poing Claudius",lat:48.1700,lng:11.8090},{id:24,name:"Kirchheim - Herzogen Wege",short:"Kirchheim",lat:48.1750,lng:11.7780},{id:25,name:"Landsham - Abzweigung Grub",short:"Landsham",lat:48.1810,lng:11.7620},{id:26,name:"Pliening - Ludwigstr.",short:"Pliening",lat:48.1870,lng:11.7900},{id:27,name:"Neufinsing - Rathaus gg. Netto",short:"Neufinsing",lat:48.1920,lng:11.8050},{id:28,name:"Lüß",short:"Lüß",lat:48.1980,lng:11.8180},{id:29,name:"Oberneuching",short:"Oberneuching",lat:48.2040,lng:11.8300},{id:30,name:"Am Wirtsacker Oberneuching",short:"Wirtsacker",lat:48.2050,lng:11.8310},{id:31,name:"Niederneuching - Kirchenstr.",short:"Niederneuching",lat:48.2100,lng:11.8420},{id:32,name:"Moosinning - Dorfstraße",short:"Moosinning Dorf",lat:48.2160,lng:11.8530},{id:33,name:"Moosinning - Sonnenstr.",short:"Moosinning Sonnen",lat:48.2170,lng:11.8540},{id:34,name:"Moosinning - Erdinger Str.",short:"Moosinning Erding",lat:48.2180,lng:11.8560},{id:35,name:"Notzing - Römerstraße",short:"Notzing",lat:48.2250,lng:11.8680},{id:36,name:"Montessori Schule Aufkirchen",short:"Montessori Aufkirchen",lat:48.2310,lng:11.8750},{id:40,name:"Markt Schwaben - Burgerfeld",short:"MS Burgerfeld",lat:48.1920,lng:11.8700},{id:41,name:"Markt Schwaben - Rathaus",short:"MS Rathaus",lat:48.1935,lng:11.8690},{id:42,name:"Herdweg - Fichtenstr.",short:"Herdweg Fichten",lat:48.1980,lng:11.8600},{id:43,name:"Herdweg - Römerstr.",short:"Herdweg Römer",lat:48.1990,lng:11.8590},{id:44,name:"Ottenhofen - Bahnhof",short:"Ottenhofen",lat:48.2060,lng:11.8480},{id:45,name:"St. Kolomann - S-Bahnhof",short:"St. Kolomann",lat:48.2120,lng:11.8400},{id:46,name:"Wörth - Pretzener Str.",short:"Wörth",lat:48.2180,lng:11.8320},{id:47,name:"Niederwörth - MVV Haltestelle",short:"Niederwörth",lat:48.2210,lng:11.8280},{id:48,name:"Pretzen - Nußbaumstr.",short:"Pretzen",lat:48.2270,lng:11.8200},{id:49,name:"Erding - Brauerstr.",short:"Erding Brauerstr.",lat:48.3010,lng:11.9070},{id:50,name:"Erding - Gerberstr.",short:"Erding Gerberstr.",lat:48.3040,lng:11.9060},{id:51,name:"Erding - Am Stadion",short:"Erding Stadion",lat:48.3060,lng:11.9050},{id:52,name:"Erding - Anton-Bruckner-Str.",short:"Erding Bruckner",lat:48.3080,lng:11.9040},{id:53,name:"Erding - Uhlandstr.",short:"Erding Uhland",lat:48.3090,lng:11.9030},{id:54,name:"Erding - Dachauer Str.",short:"Erding Dachauer",lat:48.3100,lng:11.9020},{id:55,name:"Montessori Schule Erding",short:"Montessori Erding",lat:48.3120,lng:11.9010},{id:60,name:"Niederding Dorfplatz (MVV)",short:"Niederding",lat:48.2900,lng:11.8950},{id:61,name:"Schwaig (ED) Hochstr. (MVV)",short:"Schwaig",lat:48.2850,lng:11.8900},{id:62,name:"Oberding Hauptstr./Grasfeldweg",short:"Oberding",lat:48.2800,lng:11.8820},{id:63,name:"Notzing Gartenstr. Nord (MVV)",short:"Notzing Garten",lat:48.2750,lng:11.8730},{id:64,name:"Notzing Postschwaige (MVV)",short:"Notzing Post",lat:48.2730,lng:11.8710},{id:65,name:"Goldach Pfarrer-Prüger-Str. (MVV)",short:"Goldach",lat:48.2680,lng:11.8640},{id:66,name:"Grüneck Erdinger Straße (MVV)",short:"Grüneck",lat:48.2600,lng:11.8550},{id:67,name:"Neufahrn ARAL",short:"Neufahrn",lat:48.3200,lng:11.6700},{id:68,name:"München Paul-Hindemith-Allee (MVG)",short:"Hindemith-Allee",lat:48.1850,lng:11.6500},{id:69,name:"München Euro-Industriepark-Nord",short:"Euro-Industriepark",lat:48.1900,lng:11.6450},{id:70,name:"München Hufelandstraße",short:"Hufelandstr.",lat:48.1950,lng:11.6400},{id:71,name:"München Anhalter Platz (MVG)",short:"Anhalter Platz",lat:48.2000,lng:11.6350},{id:72,name:"München BMW Riesenfeldstraße",short:"BMW Riesenfeldstr.",lat:48.2050,lng:11.6300},{id:73,name:"München BMW Dostlerstraße",short:"BMW Dostlerstr.",lat:48.2100,lng:11.6250},{id:80,name:"Blumenkindergarten, Blumenstr. 1, Hallbergmoos",short:"Blumenkindergarten",lat:48.3350,lng:11.7500},{id:81,name:"Burg Trausnitz, Landshut",short:"Burg Trausnitz",lat:48.5380,lng:12.1530},{id:90,name:"Wasserburg/Inn Bf",short:"Wasserburg Bf",lat:48.0600,lng:12.2200},{id:91,name:"Ramerberg",short:"Ramerberg",lat:48.0200,lng:12.1800},{id:92,name:"Rott (Inn)",short:"Rott (Inn)",lat:48.0000,lng:12.1400},{id:93,name:"Schechen",short:"Schechen",lat:47.9800,lng:12.1100},{id:94,name:"Ro Hochschule",short:"Ro Hochschule",lat:47.9200,lng:12.1050},{id:95,name:"Rosenheim",short:"Rosenheim",lat:47.8600,lng:12.1280},{id:96,name:"Wöhrstraße, 84503 Altötting",short:"Altötting Wöhrstr.",lat:48.2220,lng:12.6760},{id:97,name:"Garching, Freising",short:"Garching Freising",lat:48.4350,lng:11.9780}];
+const STOPS=[{id:1,name:"München Ostbahnhof Friedenstraße",short:"Ostbahnhof",lat:48.1276,lng:11.6077},{id:2,name:"München Ampfingstraße",short:"Ampfingstr.",lat:48.1285,lng:11.6180},{id:3,name:"München Berg am Laim (S)",short:"Berg am Laim",lat:48.1342,lng:11.6337},{id:4,name:"München Graf-Lehndorff-Straße",short:"Graf-Lehndorff",lat:48.1348,lng:11.6863},{id:5,name:"Feldkirchen (S)",short:"Feldkirchen",lat:48.1514,lng:11.7312},{id:6,name:"Heimstetten (S) Süd",short:"Heimstetten",lat:48.1590,lng:11.7604},{id:7,name:"Grub (S), Nord",short:"Grub",lat:48.1644,lng:11.7824},{id:8,name:"Poing (S), Nord",short:"Poing",lat:48.1710,lng:11.8086},{id:9,name:"Markt Schwaben (S)",short:"Markt Schwaben",lat:48.1933,lng:11.8619},{id:10,name:"Zamilastraße, München",short:"Zamilastr.",lat:48.1380,lng:11.6280},{id:20,name:"Anzing - Lärchenstr.",short:"Anzing",lat:48.1540,lng:11.8540},{id:21,name:"Poing - Anzinger Str.",short:"Poing Anzinger",lat:48.1680,lng:11.8130},{id:22,name:"Poing - Mitterfeldring",short:"Poing Mitterfeld",lat:48.1690,lng:11.8110},{id:23,name:"Poing - Claudiusstr.",short:"Poing Claudius",lat:48.1700,lng:11.8090},{id:24,name:"Kirchheim - Herzogen Wege",short:"Kirchheim",lat:48.1750,lng:11.7780},{id:25,name:"Landsham - Abzweigung Grub",short:"Landsham",lat:48.1810,lng:11.7620},{id:26,name:"Pliening - Ludwigstr.",short:"Pliening",lat:48.1870,lng:11.7900},{id:27,name:"Neufinsing - Rathaus gg. Netto",short:"Neufinsing",lat:48.1920,lng:11.8050},{id:28,name:"Lüß",short:"Lüß",lat:48.1980,lng:11.8180},{id:29,name:"Oberneuching",short:"Oberneuching",lat:48.2040,lng:11.8300},{id:30,name:"Am Wirtsacker Oberneuching",short:"Wirtsacker",lat:48.2050,lng:11.8310},{id:31,name:"Niederneuching - Kirchenstr.",short:"Niederneuching",lat:48.2100,lng:11.8420},{id:32,name:"Moosinning - Dorfstraße",short:"Moosinning Dorf",lat:48.2160,lng:11.8530},{id:33,name:"Moosinning - Sonnenstr.",short:"Moosinning Sonnen",lat:48.2170,lng:11.8540},{id:34,name:"Moosinning - Erdinger Str.",short:"Moosinning Erding",lat:48.2180,lng:11.8560},{id:35,name:"Notzing - Römerstraße",short:"Notzing",lat:48.2250,lng:11.8680},{id:36,name:"Montessori Schule Aufkirchen",short:"Montessori Aufkirchen",lat:48.2310,lng:11.8750},{id:40,name:"Markt Schwaben - Burgerfeld",short:"MS Burgerfeld",lat:48.1920,lng:11.8700},{id:41,name:"Markt Schwaben - Rathaus",short:"MS Rathaus",lat:48.1935,lng:11.8690},{id:42,name:"Herdweg - Fichtenstr.",short:"Herdweg Fichten",lat:48.1980,lng:11.8600},{id:43,name:"Herdweg - Römerstr.",short:"Herdweg Römer",lat:48.1990,lng:11.8590},{id:44,name:"Ottenhofen - Bahnhof",short:"Ottenhofen",lat:48.2060,lng:11.8480},{id:45,name:"St. Kolomann - S-Bahnhof",short:"St. Kolomann",lat:48.2120,lng:11.8400},{id:46,name:"Wörth - Pretzener Str.",short:"Wörth",lat:48.2180,lng:11.8320},{id:47,name:"Niederwörth - MVV Haltestelle",short:"Niederwörth",lat:48.2210,lng:11.8280},{id:48,name:"Pretzen - Nußbaumstr.",short:"Pretzen",lat:48.2270,lng:11.8200},{id:49,name:"Erding - Brauerstr.",short:"Erding Brauerstr.",lat:48.3010,lng:11.9070},{id:50,name:"Erding - Gerberstr.",short:"Erding Gerberstr.",lat:48.3040,lng:11.9060},{id:51,name:"Erding - Am Stadion",short:"Erding Stadion",lat:48.3060,lng:11.9050},{id:52,name:"Erding - Anton-Bruckner-Str.",short:"Erding Bruckner",lat:48.3080,lng:11.9040},{id:53,name:"Erding - Uhlandstr.",short:"Erding Uhland",lat:48.3090,lng:11.9030},{id:54,name:"Erding - Dachauer Str.",short:"Erding Dachauer",lat:48.3100,lng:11.9020},{id:55,name:"Montessori Schule Erding",short:"Montessori Erding",lat:48.3120,lng:11.9010},{id:60,name:"Niederding Dorfplatz (MVV)",short:"Niederding",lat:48.2900,lng:11.8950},{id:61,name:"Schwaig (ED) Hochstr. (MVV)",short:"Schwaig",lat:48.2850,lng:11.8900},{id:62,name:"Oberding Hauptstr./Grasfeldweg",short:"Oberding",lat:48.2800,lng:11.8820},{id:63,name:"Notzing Gartenstr. Nord (MVV)",short:"Notzing Garten",lat:48.2750,lng:11.8730},{id:64,name:"Notzing Postschwaige (MVV)",short:"Notzing Post",lat:48.2730,lng:11.8710},{id:65,name:"Goldach Pfarrer-Prüger-Str. (MVV)",short:"Goldach",lat:48.2680,lng:11.8640},{id:66,name:"Grüneck Erdinger Straße (MVV)",short:"Grüneck",lat:48.2600,lng:11.8550},{id:67,name:"Neufahrn ARAL",short:"Neufahrn",lat:48.3200,lng:11.6700},{id:68,name:"München Paul-Hindemith-Allee (MVG)",short:"Hindemith-Allee",lat:48.1850,lng:11.6500},{id:69,name:"München Euro-Industriepark-Nord",short:"Euro-Industriepark",lat:48.1900,lng:11.6450},{id:70,name:"München Hufelandstraße",short:"Hufelandstr.",lat:48.1950,lng:11.6400},{id:71,name:"München Anhalter Platz (MVG)",short:"Anhalter Platz",lat:48.2000,lng:11.6350},{id:72,name:"München BMW Riesenfeldstraße",short:"BMW Riesenfeldstr.",lat:48.2050,lng:11.6300},{id:73,name:"München BMW Dostlerstraße",short:"BMW Dostlerstr.",lat:48.2100,lng:11.6250},{id:80,name:"Blumenkindergarten, Blumenstr. 1, Hallbergmoos",short:"Blumenkindergarten",lat:48.3350,lng:11.7500},{id:81,name:"Burg Trausnitz, Landshut",short:"Burg Trausnitz",lat:48.5380,lng:12.1530},{id:90,name:"Wasserburg/Inn Bf",short:"Wasserburg Bf",lat:48.0600,lng:12.2200},{id:91,name:"Ramerberg",short:"Ramerberg",lat:48.0200,lng:12.1800},{id:92,name:"Rott (Inn)",short:"Rott (Inn)",lat:48.0000,lng:12.1400},{id:93,name:"Schechen",short:"Schechen",lat:47.9800,lng:12.1100},{id:94,name:"Ro Hochschule",short:"Ro Hochschule",lat:47.9200,lng:12.1050},{id:95,name:"Rosenheim",short:"Rosenheim",lat:47.8600,lng:12.1280},{id:96,name:"Wöhrstraße, 84503 Altötting",short:"Altötting Wöhrstr.",lat:48.2220,lng:12.6760},{id:97,name:"Garching, Freising",short:"Garching Freising",lat:48.4350,lng:11.9780}];
 const getStop=id=>STOPS.find(s=>s.id===id)||{};
 const distM=(a1,o1,a2,o2)=>{const R=6371000,dA=(a2-a1)*Math.PI/180,dO=(o2-o1)*Math.PI/180;const a=Math.sin(dA/2)**2+Math.cos(a1*Math.PI/180)*Math.cos(a2*Math.PI/180)*Math.sin(dO/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));};
 const timeToMin=t=>{const[h,m]=t.split(":").map(Number);return h*60+m;};
@@ -97,22 +121,23 @@ const DIENSTPLAENE={
 const SONDERMELDUNGEN=[{id:3,type:"info",title:"🅿️ Pausenplatz",text:"Zamilastraße, Berg am Laim.",isNew:false}];
 const POENALE=[{rule:"Fahrt ausgefallen",amount:250,sev:"high"},{rule:"Fahrzeug technisch defekt",amount:250,sev:"high"},{rule:"Lenk-/Ruhezeiten verletzt",amount:250,sev:"high"},{rule:"Falscher Bustyp",amount:150,sev:"medium"},{rule:"Falsche/fehlende Beschilderung",amount:100,sev:"medium"},{rule:"DB SEM App nicht benutzt",amount:100,sev:"medium"},{rule:"Verspätete/verfrühte Abfahrt",amount:100,sev:"medium"},{rule:"Zwischenhalt nicht bedient",amount:100,sev:"medium"},{rule:"Störung nicht gemeldet",amount:100,sev:"medium"},{rule:"Haltestelle nicht angesagt",amount:50,sev:"low"}];
 
-const LSButton=()=><button onClick={callLS} style={{position:"fixed",bottom:24,right:20,width:56,height:56,borderRadius:"50%",background:"#E74C3C",border:"none",color:"#fff",fontSize:22,cursor:"pointer",boxShadow:"0 4px 20px rgba(231,76,60,.5)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}}>📞</button>;
+const LSButton=({driver})=><button onClick={()=>{logEvent("leitstelle_anruf",driver||"—",{nummer:LEITSTELLE_TEL});callLS();}} style={{position:"fixed",bottom:24,right:20,width:56,height:56,borderRadius:"50%",background:"#E74C3C",border:"none",color:"#fff",fontSize:22,cursor:"pointer",boxShadow:"0 4px 20px rgba(231,76,60,.5)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center"}}>📞</button>;
 const NavBtn=({stop,small})=>{if(!stop?.lat)return null;return <button onClick={e=>{e.stopPropagation();openMaps(stop.lat,stop.lng);}} style={{background:"#1a6fb5",border:"none",borderRadius:8,padding:small?"4px 8px":"6px 12px",color:"#fff",fontSize:small?11:12,fontWeight:700,cursor:"pointer",fontFamily:"'Nunito',sans-serif",display:"inline-flex",alignItems:"center",gap:4,flexShrink:0,whiteSpace:"nowrap"}}>🗺️ {small?"Nav":"Navigation"}</button>;};
 
-function Login({onDriver,onDispatch}){
-  const[mode,setMode]=useState(null),[sel,setSel]=useState(""),[pin,setPin]=useState(""),[err,setErr]=useState("");
+function Login({onDriver}){
+  const[sel,setSel]=useState(""),[err,setErr]=useState("");
+  const[showLog,setShowLog]=useState(false);
+  const lpRef=useRef(null);
   const today=new Date().toLocaleDateString("de-DE",{weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"});
+  const startLP=()=>{lpRef.current=setTimeout(()=>setShowLog(true),1500);};
+  const cancelLP=()=>{if(lpRef.current){clearTimeout(lpRef.current);lpRef.current=null;}};
   return <div style={{fontFamily:"'Nunito',sans-serif",background:"#0B0F1A",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:32}}>
     <style>{FONTS}</style>
     <div style={{textAlign:"center",marginBottom:48,animation:"fadeUp .5s ease"}}>
-      <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:64,color:"#E8C84A",letterSpacing:6,lineHeight:1}}>CONNECT</div>
+      <div onMouseDown={startLP} onMouseUp={cancelLP} onMouseLeave={cancelLP} onTouchStart={startLP} onTouchEnd={cancelLP} onTouchCancel={cancelLP} style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:64,color:"#E8C84A",letterSpacing:6,lineHeight:1,cursor:"pointer",userSelect:"none"}}>CONNECT</div>
       <div style={{fontSize:12,color:"#555",marginTop:6}}>{today} · v4.9</div>
     </div>
-    {!mode?<div style={{width:"100%",maxWidth:420,display:"flex",flexDirection:"column",gap:14}}>
-      <button onClick={()=>setMode("d")} style={{background:"#E8C84A",color:"#0B0F1A",border:"none",borderRadius:20,padding:"26px",fontSize:22,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>👨‍✈️ Ich bin Fahrer</button>
-      <button onClick={()=>setMode("dis")} style={{background:"rgba(255,255,255,.07)",color:"#fff",border:"1px solid rgba(255,255,255,.2)",borderRadius:20,padding:"22px",fontSize:18,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>🖥️ Ich bin Disponent</button>
-    </div>:mode==="d"?<div style={{width:"100%",maxWidth:420,animation:"fadeUp .3s ease"}}>
+    <div style={{width:"100%",maxWidth:420,animation:"fadeUp .3s ease"}}>
       <div style={{fontSize:12,color:"#666",textTransform:"uppercase",letterSpacing:2,marginBottom:16}}>Fahrer wählen</div>
       {DRIVERS.map(d=><button key={d.id} onClick={()=>setSel(d.name)} style={{width:"100%",display:"flex",alignItems:"center",gap:16,background:sel===d.name?"rgba(232,200,74,.12)":"rgba(255,255,255,.04)",border:sel===d.name?"2px solid #E8C84A":"2px solid transparent",borderRadius:16,padding:"16px 20px",cursor:"pointer",marginBottom:10}}>
         <div style={{width:48,height:48,borderRadius:"50%",background:"#6E1E6E",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Bebas Neue',sans-serif",fontSize:17,color:"#E8C84A",flexShrink:0}}>{d.avatar}</div>
@@ -120,20 +145,84 @@ function Login({onDriver,onDispatch}){
         {sel===d.name&&<span style={{color:"#E8C44A",fontSize:22}}>✓</span>}
       </button>)}
       {err&&<div style={{color:"#E74C3C",fontSize:13,marginBottom:10,textAlign:"center"}}>{err}</div>}
-      <div style={{display:"flex",gap:10,marginTop:8}}>
-        <button onClick={()=>setMode(null)} style={{flex:1,background:"transparent",border:"1px solid rgba(255,255,255,.15)",borderRadius:14,padding:"14px",color:"#C0CAD8",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>← Zurück</button>
-        <button onClick={()=>{if(!sel){setErr("Bitte Fahrer wählen");return;}onDriver(DRIVERS.find(d=>d.name===sel));}} style={{flex:2,background:"#2ECC71",border:"none",borderRadius:14,padding:"14px",color:"#0B0F1A",fontSize:18,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>Anmelden →</button>
-      </div>
-    </div>:<div style={{width:"100%",maxWidth:420,animation:"fadeUp .3s ease"}}>
-      <div style={{fontSize:12,color:"#666",textTransform:"uppercase",letterSpacing:2,marginBottom:14}}>Disponent-PIN</div>
-      <input type="password" maxLength={4} value={pin} onChange={e=>{setPin(e.target.value);setErr("");}} onKeyDown={e=>e.key==="Enter"&&(pin===DISPATCH_PIN?onDispatch():setErr("Falscher PIN"))} placeholder="● ● ● ●" style={{width:"100%",background:"rgba(255,255,255,.07)",border:"2px solid rgba(255,255,255,.15)",borderRadius:16,padding:"22px",fontSize:36,textAlign:"center",color:"#E8C84A",fontFamily:"monospace",letterSpacing:18,outline:"none",marginBottom:8}}/>
-      <div style={{fontSize:12,color:"#444",textAlign:"center",marginBottom:20}}>PIN: 1234</div>
-      {err&&<div style={{color:"#E74C3C",fontSize:13,marginBottom:10,textAlign:"center"}}>{err}</div>}
-      <div style={{display:"flex",gap:10}}>
-        <button onClick={()=>setMode(null)} style={{flex:1,background:"transparent",border:"1px solid rgba(255,255,255,.15)",borderRadius:14,padding:"14px",color:"#C0CAD8",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>← Zurück</button>
-        <button onClick={()=>pin===DISPATCH_PIN?onDispatch():setErr("Falscher PIN")} style={{flex:2,background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.2)",borderRadius:14,padding:"14px",color:"#fff",fontSize:17,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>Anmelden →</button>
-      </div>
-    </div>}
+      <button onClick={()=>{if(!sel){setErr("Bitte Fahrer wählen");return;}const drv=DRIVERS.find(d=>d.name===sel);logEvent("login",drv.name,{});onDriver(drv);}} style={{width:"100%",marginTop:8,background:"#2ECC71",border:"none",borderRadius:14,padding:"14px",color:"#0B0F1A",fontSize:18,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>Anmelden →</button>
+    </div>
+    {showLog&&<LogViewer onClose={()=>setShowLog(false)}/>}
+  </div>;
+}
+
+function LogViewer({onClose}){
+  const[log,setLog]=useState(getLog());
+  const[filter,setFilter]=useState("");
+  const filtered=filter?log.filter(e=>JSON.stringify(e).toLowerCase().includes(filter.toLowerCase())):log;
+  const exportJSON=()=>{
+    const blob=new Blob([JSON.stringify(log,null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;a.download="connect_log_"+new Date().toISOString().slice(0,10)+".json";
+    a.click();URL.revokeObjectURL(url);
+  };
+  const exportCSV=()=>{
+    const headers=["ts","tsLocal","type","driver","datum","tour","tourLabel","halt","sollZeit","istZeit","quelle","distanzM","gpsGenauigkeit","fahrerLat","fahrerLng","haltLat","haltLng","fahrzeug","dienst","code","ziel","nummer","hinweis","fehler","bestaetigtTrotzDistanz","haltId","sollAbfahrt","sollAnkunft","istAnkunft"];
+    const esc=v=>v==null?"":String(v).replace(/"/g,'""');
+    const rows=[headers.join(";")].concat(log.map(e=>headers.map(h=>'"'+esc(e[h])+'"').join(";")));
+    const blob=new Blob(["\uFEFF"+rows.join("\n")],{type:"text/csv;charset=utf-8"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;a.download="connect_log_"+new Date().toISOString().slice(0,10)+".csv";
+    a.click();URL.revokeObjectURL(url);
+  };
+  const sendMail=()=>{
+    const body=encodeURIComponent("Beweis-Log Export\n\n"+JSON.stringify(log,null,2).slice(0,5000)+(JSON.stringify(log).length>5000?"\n\n[gekürzt — vollständig per JSON-Export]":""));
+    window.open("mailto:?subject="+encodeURIComponent("CONNECT Beweis-Log "+new Date().toLocaleDateString("de-DE"))+"&body="+body);
+  };
+  const reload=()=>setLog(getLog());
+  const reset=()=>{if(window.confirm("Gesamtes Log löschen? Dies kann nicht rückgängig gemacht werden."))clearLog(),setLog([]);};
+  const typeColor=t=>({login:"#3498DB",logout:"#888",anfahrt_bestaetigt:"#E8C84A",halt_bestaetigt:"#2ECC71",halt_abgelehnt:"#E74C3C",tour_gestartet:"#9B59B6",tour_abgeschlossen:"#2ECC71",leitstelle_anruf:"#E74C3C"}[t]||"#888");
+  return <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:9999,display:"flex",flexDirection:"column",fontFamily:"'Nunito',sans-serif"}}>
+    <div style={{background:"#0d1520",padding:"16px 20px",borderBottom:"1px solid rgba(255,255,255,.1)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+      <div><div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:22,color:"#E8C84A",letterSpacing:2}}>BEWEIS-LOG</div><div style={{fontSize:12,color:"#888"}}>{log.length} Einträge</div></div>
+      <button onClick={onClose} style={{background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.15)",borderRadius:10,padding:"8px 16px",color:"#fff",fontSize:14,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>✕ Schließen</button>
+    </div>
+    <div style={{padding:"12px 20px",background:"#0B0F1A",borderBottom:"1px solid rgba(255,255,255,.06)",display:"flex",gap:8,flexWrap:"wrap"}}>
+      <input value={filter} onChange={e=>setFilter(e.target.value)} placeholder="Filtern (Name, Halt, Typ...)" style={{flex:"1 1 200px",minWidth:0,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.15)",borderRadius:8,padding:"8px 12px",color:"#fff",fontSize:13,outline:"none",fontFamily:"'Nunito',sans-serif"}}/>
+      <button onClick={reload} style={{background:"rgba(52,152,219,.15)",border:"1px solid rgba(52,152,219,.3)",borderRadius:8,padding:"8px 12px",color:"#3498DB",fontSize:12,cursor:"pointer",fontFamily:"'Nunito',sans-serif",fontWeight:700}}>↻</button>
+      <button onClick={exportJSON} style={{background:"rgba(46,204,113,.15)",border:"1px solid rgba(46,204,113,.3)",borderRadius:8,padding:"8px 12px",color:"#2ECC71",fontSize:12,cursor:"pointer",fontFamily:"'Nunito',sans-serif",fontWeight:700}}>JSON</button>
+      <button onClick={exportCSV} style={{background:"rgba(46,204,113,.15)",border:"1px solid rgba(46,204,113,.3)",borderRadius:8,padding:"8px 12px",color:"#2ECC71",fontSize:12,cursor:"pointer",fontFamily:"'Nunito',sans-serif",fontWeight:700}}>CSV</button>
+      <button onClick={sendMail} style={{background:"rgba(232,200,74,.15)",border:"1px solid rgba(232,200,74,.3)",borderRadius:8,padding:"8px 12px",color:"#E8C84A",fontSize:12,cursor:"pointer",fontFamily:"'Nunito',sans-serif",fontWeight:700}}>📧 Mail</button>
+      <button onClick={reset} style={{background:"rgba(231,76,60,.15)",border:"1px solid rgba(231,76,60,.3)",borderRadius:8,padding:"8px 12px",color:"#E74C3C",fontSize:12,cursor:"pointer",fontFamily:"'Nunito',sans-serif",fontWeight:700}}>🗑</button>
+    </div>
+    <div style={{flex:1,overflowY:"auto",padding:"12px 20px",background:"#0B0F1A"}}>
+      {filtered.length===0?<div style={{textAlign:"center",color:"#555",padding:"40px 0",fontSize:14}}>Keine Einträge{filter?" für Filter":" — App nutzen, dann erscheinen Einträge"}</div>:filtered.slice().reverse().map((e,i)=><div key={i} style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",borderLeft:"3px solid "+typeColor(e.type),borderRadius:10,padding:"10px 14px",marginBottom:6}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4,gap:8,flexWrap:"wrap"}}>
+          <div style={{fontWeight:800,fontSize:13,color:typeColor(e.type),fontFamily:"'Nunito',sans-serif"}}>{e.type}</div>
+          <div style={{fontSize:11,color:"#666",fontFamily:"monospace"}}>{e.tsLocal}</div>
+        </div>
+        <div style={{fontSize:12,color:"#C0CAD8",lineHeight:1.5}}>
+          <span style={{color:"#E8C84A",fontWeight:700}}>{e.driver}</span>
+          {e.halt&&<span> · {e.halt}</span>}
+          {e.tourLabel&&<span> · {e.tourLabel}</span>}
+          {e.ziel&&<span> · {e.ziel}</span>}
+          {e.sollZeit&&<span> · Soll <b>{e.sollZeit}</b></span>}
+          {e.istZeit&&<span> · Ist <b>{e.istZeit}</b></span>}
+          {e.distanzM!=null&&<span style={{color:e.distanzM<GPS_RADIUS_M?"#2ECC71":"#F39C12"}}> · {e.distanzM} m</span>}
+          {e.gpsGenauigkeit!=null&&<span style={{color:"#666"}}> · ±{e.gpsGenauigkeit}m</span>}
+          {e.quelle&&<span style={{color:"#888"}}> · {e.quelle}</span>}
+          {e.fahrzeug&&<span style={{color:"#666"}}> · {e.fahrzeug}</span>}
+          {e.code&&<span style={{color:"#9B59B6"}}> · {e.code}</span>}
+        </div>
+        {(e.fahrerLat||e.haltLat)&&<div style={{fontSize:10,color:"#555",fontFamily:"monospace",marginTop:4}}>
+          {e.fahrerLat&&<span>Fahrer: {e.fahrerLat.toFixed(5)}, {e.fahrerLng.toFixed(5)}</span>}
+          {e.haltLat&&<span style={{marginLeft:10}}>Halt: {e.haltLat.toFixed(5)}, {e.haltLng.toFixed(5)}</span>}
+        </div>}
+        {e.bestaetigtTrotzDistanz&&<div style={{fontSize:11,color:"#F39C12",marginTop:3,fontWeight:700}}>⚠ Fahrer hat trotz Distanz bestätigt</div>}
+        {e.fehler&&<div style={{fontSize:11,color:"#E74C3C",marginTop:3}}>Fehler: {e.fehler}</div>}
+        {e.hinweis&&<div style={{fontSize:11,color:"#888",marginTop:3}}>{e.hinweis}</div>}
+      </div>)}
+    </div>
+    <div style={{padding:"10px 20px",background:"#0d1520",borderTop:"1px solid rgba(255,255,255,.06)",fontSize:11,color:"#555",textAlign:"center"}}>
+      Lokales Beweis-Log · gespeichert nur auf diesem Gerät · Backend folgt in Stufe 2
+    </div>
   </div>;
 }
 
@@ -173,10 +262,106 @@ function FahrerApp({driver,onLogout}){
   const startGPS=()=>{if(!navigator.geolocation)return;setGpsOn(true);wRef.current=navigator.geolocation.watchPosition(pos=>{const{latitude:la,longitude:lo}=pos.coords;if(phase==="anfahrt"&&plan?.anfahrt){const s=getStop(plan.anfahrt.stopId);if(s?.lat&&distM(la,lo,s.lat,s.lng)<GPS_RADIUS_M)handleAnfahrtDone();}else if(phase==="tour"&&curStop?.lat){if(distM(la,lo,curStop.lat,curStop.lng)<GPS_RADIUS_M)handleStopConfirm();}},()=>{},{enableHighAccuracy:true,maximumAge:3000,timeout:8000});};
   const stopGPS=()=>{if(wRef.current)navigator.geolocation.clearWatch(wRef.current);setGpsOn(false);};
   useEffect(()=>()=>{if(wRef.current)navigator.geolocation.clearWatch(wRef.current);},[]);
-  const showBanner=n=>{setGpsBanner(n);clearTimeout(tRef.current);tRef.current=setTimeout(()=>setGpsBanner(null),4000);};
-  const handleAnfahrtDone=()=>{showBanner(plan?.anfahrt?.ziel||"Anfahrt");setAnfahrtDone(p=>({...p,[activeDayKey]:true}));setPhase("tag");};
-  const handleStopConfirm=()=>{if(!activeTour)return;showBanner(getStop(activeTour.stops[stopIdx].id).name||"Halt");if(stopIdx<activeTour.stops.length-1){setStopIdx(i=>i+1);}else{setShowTourDone(true);}};
-  const handleTourAbgeschlossen=()=>{setDoneTours(p=>({...p,[activeDayKey]:[...(p[activeDayKey]||[]),activeTour.id]}));setActiveIdx(i=>i+1);setStopIdx(0);setShowTourDone(false);setPhase("tag");};
+  const showBanner=(n,kind)=>{setGpsBanner({text:n,kind:kind||"gps"});clearTimeout(tRef.current);tRef.current=setTimeout(()=>setGpsBanner(null),4500);};
+  const handleAnfahrtDone=()=>{
+    logEvent("anfahrt_bestaetigt",driver.name,{
+      datum:activeDayKey,
+      ziel:plan?.anfahrt?.ziel,
+      dienst:plan?.dienst,
+      code:plan?.code,
+      fahrzeug:plan?.fahrzeug
+    });
+    showBanner(plan?.anfahrt?.ziel||"Anfahrt","gps");
+    setAnfahrtDone(p=>({...p,[activeDayKey]:true}));
+    setPhase("tag");
+  };
+  const advanceStop=()=>{if(stopIdx<activeTour.stops.length-1){setStopIdx(i=>i+1);}else{setShowTourDone(true);}};
+  // Automatische GPS-Bestätigung — Standort wurde im watchPosition geprüft
+  const handleStopConfirm=()=>{
+    if(!activeTour)return;
+    const tourStop=activeTour.stops[stopIdx];
+    const stop=getStop(tourStop.id);
+    // GPS-Position abrufen für Log (watchPosition hat sie schon, aber wir loggen frisch)
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(pos=>{
+        const d=distM(pos.coords.latitude,pos.coords.longitude,stop.lat,stop.lng);
+        logEvent("halt_bestaetigt",driver.name,{
+          datum:activeDayKey,
+          tour:activeTour.id,
+          tourLabel:activeTour.label,
+          halt:stop.name,
+          haltId:stop.id,
+          sollZeit:tourStop.t,
+          istZeit:new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",second:"2-digit"}),
+          quelle:"gps_auto",
+          fahrerLat:pos.coords.latitude,
+          fahrerLng:pos.coords.longitude,
+          gpsGenauigkeit:Math.round(pos.coords.accuracy||0),
+          haltLat:stop.lat,
+          haltLng:stop.lng,
+          distanzM:Math.round(d)
+        });
+      },()=>{
+        logEvent("halt_bestaetigt",driver.name,{
+          datum:activeDayKey,tour:activeTour.id,halt:stop.name,haltId:stop.id,
+          sollZeit:tourStop.t,istZeit:new Date().toLocaleTimeString("de-DE"),
+          quelle:"gps_auto",hinweis:"Position für Log nicht abrufbar"
+        });
+      },{enableHighAccuracy:true,maximumAge:5000,timeout:5000});
+    }
+    showBanner(stop.name||"Halt","gps");
+    advanceStop();
+  };
+  // Manuelle Bestätigung mit echter Standortprüfung
+  const handleManualConfirm=()=>{
+    if(!activeTour)return;
+    const tourStop=activeTour.stops[stopIdx];
+    const stop=getStop(tourStop.id);
+    const istZeit=new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+    if(!stop?.lat){
+      logEvent("halt_bestaetigt",driver.name,{datum:activeDayKey,tour:activeTour.id,halt:stop.name,haltId:stop.id,sollZeit:tourStop.t,istZeit,quelle:"manuell_ohne_koordinaten"});
+      showBanner(stop.name||"Halt","manual");advanceStop();return;
+    }
+    if(!navigator.geolocation){
+      logEvent("halt_bestaetigt",driver.name,{datum:activeDayKey,tour:activeTour.id,halt:stop.name,haltId:stop.id,sollZeit:tourStop.t,istZeit,quelle:"manuell_kein_gps"});
+      showBanner("GPS nicht verfügbar — "+(stop.name||"Halt"),"warn");advanceStop();return;
+    }
+    showBanner("Standort wird geprüft…","check");
+    navigator.geolocation.getCurrentPosition(pos=>{
+      const d=distM(pos.coords.latitude,pos.coords.longitude,stop.lat,stop.lng);
+      const baseLog={
+        datum:activeDayKey,tour:activeTour.id,tourLabel:activeTour.label,
+        halt:stop.name,haltId:stop.id,sollZeit:tourStop.t,istZeit,
+        fahrerLat:pos.coords.latitude,fahrerLng:pos.coords.longitude,
+        gpsGenauigkeit:Math.round(pos.coords.accuracy||0),
+        haltLat:stop.lat,haltLng:stop.lng,distanzM:Math.round(d)
+      };
+      if(d<GPS_RADIUS_M){
+        logEvent("halt_bestaetigt",driver.name,{...baseLog,quelle:"manuell_verifiziert"});
+        showBanner((stop.name||"Halt")+" · "+Math.round(d)+" m","ok");
+        advanceStop();
+      }else{
+        const km=d>1000?(d/1000).toFixed(1)+" km":Math.round(d)+" m";
+        logEvent("halt_bestaetigt",driver.name,{...baseLog,quelle:"manuell_ausserhalb_radius",bestaetigtTrotzDistanz:true});
+        showBanner((stop.name||"Halt")+" · "+km+" entfernt — bestätigt","warn");
+        advanceStop();
+      }
+    },err=>{
+      logEvent("halt_bestaetigt",driver.name,{datum:activeDayKey,tour:activeTour.id,halt:stop.name,haltId:stop.id,sollZeit:tourStop.t,istZeit,quelle:"manuell_gps_fehler",fehler:err.message});
+      showBanner((stop.name||"Halt")+" · Standort nicht abrufbar — bestätigt","warn");
+      advanceStop();
+    },{enableHighAccuracy:true,maximumAge:0,timeout:10000});
+  };
+  const handleTourAbgeschlossen=()=>{
+    logEvent("tour_abgeschlossen",driver.name,{
+      datum:activeDayKey,tour:activeTour.id,tourLabel:activeTour.label,
+      dienst:plan?.dienst,code:plan?.code,fahrzeug:plan?.fahrzeug,
+      sollAnkunft:activeTour.arr,
+      istAnkunft:new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",second:"2-digit"})
+    });
+    setDoneTours(p=>({...p,[activeDayKey]:[...(p[activeDayKey]||[]),activeTour.id]}));
+    setActiveIdx(i=>i+1);setStopIdx(0);setShowTourDone(false);setPhase("tag");
+  };
   const getTourStatus=(t,i)=>{if(!dayIsToday)return"archiv";if(todayDone.includes(t.id))return"done";const prev=i===0?todayAnfahrt||!plan?.anfahrt:todayDone.includes(touren[i-1]?.id);return prev?"active":"locked";};
   const getKW=dk=>{
     const d=new Date(dk+"T12:00:00");
@@ -223,7 +408,7 @@ function FahrerApp({driver,onLogout}){
         {aStop?.lat&&<button onClick={()=>openMaps(aStop.lat,aStop.lng)} style={{width:"100%",maxWidth:320,background:"#E8C84A",border:"none",borderRadius:16,padding:"20px",fontSize:18,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif",color:"#0B0F1A",marginBottom:14}}>🗺️ Navigation starten</button>}
         <button onClick={handleAnfahrtDone} style={{width:"100%",maxWidth:320,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.15)",borderRadius:16,padding:"16px",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif",color:"#C0CAD8"}}>✓ Angekommen</button>
       </div>
-      <LSButton/>
+      <LSButton driver={driver?.name}/>
     </div>;
   }
 
@@ -244,13 +429,13 @@ function FahrerApp({driver,onLogout}){
         {!curTourStop?.t?.startsWith("~")&&<span style={{fontSize:16,fontWeight:800,color:getDelayColor(delay)}}>{getDelayText(delay)}</span>}
       </div>
       {activeTour.note&&<div style={{background:"rgba(243,156,18,.08)",border:"1px solid rgba(243,156,18,.2)",borderRadius:12,padding:"10px 14px",marginBottom:14,fontSize:13,color:"#F39C12"}}>{activeTour.note}</div>}
-      <div style={{marginBottom:16}}>{activeTour.stops.map((s,i)=>{const st=getStop(s.id);const done=i<stopIdx,active=i===stopIdx;return(<div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:i<activeTour.stops.length-1?"1px solid rgba(255,255,255,.04)":"none",opacity:done?.6:1}}><div style={{width:10,height:10,borderRadius:"50%",flexShrink:0,background:done?"#2ECC71":active?"#E8C84A":"rgba(255,255,255,.12)",boxShadow:active?"0 0 10px #E8C84A":"none"}}/><div style={{flex:1}}><span style={{fontSize:13,color:active?"#E8C84A":done?"#2ECC71":"#888",fontWeight:active?800:600}}>{st.name||st.short||"—"}</span><span style={{fontSize:11,color:"#444",marginLeft:8}}>{s.t}</span></div>{!done&&st?.lat&&<NavBtn stop={st} small/>}{done&&<span style={{fontSize:12,color:"#2ECC71"}}>✓</span>}</div>);})}</div>
-      {showTourDone?<div style={{background:"rgba(46,204,113,.1)",border:"2px solid #2ECC71",borderRadius:18,padding:20,textAlign:"center",animation:"fadeUp .3s ease"}}><div style={{fontSize:20,marginBottom:8}}>🏁</div><div style={{fontSize:16,fontWeight:800,color:"#2ECC71",marginBottom:6}}>Letzte Haltestelle erreicht</div><div style={{fontSize:13,color:"#888",marginBottom:16}}>{activeTour.label}</div><button onClick={handleTourAbgeschlossen} style={{width:"100%",background:"#2ECC71",border:"none",borderRadius:14,padding:"16px",fontSize:16,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif",color:"#0B0F1A"}}>✓ Tour abgeschlossen</button></div>:<button onClick={handleStopConfirm} style={{width:"100%",background:"rgba(255,255,255,.06)",border:"2px solid rgba(255,255,255,.15)",borderRadius:18,padding:"18px",fontSize:15,color:"#C0CAD8",fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>✓ Halt manuell bestätigen</button>}
+      <div style={{marginBottom:16}}>{activeTour.stops.map((s,i)=>{const st=getStop(s.id);const done=i<stopIdx,active=i===stopIdx;return(<div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",borderBottom:i<activeTour.stops.length-1?"1px solid rgba(255,255,255,.04)":"none",opacity:done?.6:1}}><div style={{width:10,height:10,borderRadius:"50%",flexShrink:0,background:done?"#2ECC71":active?"#E8C84A":"rgba(255,255,255,.12)",boxShadow:active?"0 0 10px #E8C84A":"none"}}/><div style={{flex:1}}><span style={{fontSize:13,color:active?"#E8C84A":done?"#2ECC71":"#C0CAD8",fontWeight:active?800:600}}>{st.name||st.short||"—"}</span><span style={{fontSize:14,color:active?"#E8C84A":"#fff",marginLeft:10,fontWeight:800,fontFamily:"'Bebas Neue',sans-serif",letterSpacing:1}}>{s.t}</span></div>{!done&&st?.lat&&<NavBtn stop={st} small/>}{done&&<span style={{fontSize:12,color:"#2ECC71"}}>✓</span>}</div>);})}</div>
+      {showTourDone?<div style={{background:"rgba(46,204,113,.1)",border:"2px solid #2ECC71",borderRadius:18,padding:20,textAlign:"center",animation:"fadeUp .3s ease"}}><div style={{fontSize:20,marginBottom:8}}>🏁</div><div style={{fontSize:16,fontWeight:800,color:"#2ECC71",marginBottom:6}}>Letzte Haltestelle erreicht</div><div style={{fontSize:13,color:"#888",marginBottom:16}}>{activeTour.label}</div><button onClick={handleTourAbgeschlossen} style={{width:"100%",background:"#2ECC71",border:"none",borderRadius:14,padding:"16px",fontSize:16,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif",color:"#0B0F1A"}}>✓ Tour abgeschlossen</button></div>:<button onClick={handleManualConfirm} style={{width:"100%",background:"rgba(255,255,255,.06)",border:"2px solid rgba(255,255,255,.15)",borderRadius:18,padding:"18px",fontSize:15,color:"#C0CAD8",fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>✓ Halt manuell bestätigen</button>}
       <div style={{fontSize:12,color:"#444",textAlign:"center",marginTop:8}}>📡 GPS bestätigt automatisch</div>
     </div>
     <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:520,background:"#0d1520",borderTop:"1px solid rgba(255,255,255,.08)",padding:"12px 20px 28px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:13,color:"#888"}}>Halt <span style={{color:"#fff",fontWeight:800}}>{curStop?.short}</span> · {curTourStop?.t}</div><div style={{fontSize:16,fontWeight:800,color:getDelayColor(delay)}}>{!curTourStop?.t?.startsWith("~")?getDelayText(delay):""}</div></div>
-    {gpsBanner&&<div style={{position:"fixed",top:80,left:"50%",transform:"translateX(-50%)",background:"#1a3a2a",border:"2px solid #2ECC71",borderRadius:16,padding:"12px 20px",display:"flex",alignItems:"center",gap:10,zIndex:100,animation:"slideUp .3s ease",maxWidth:340}}><span style={{fontSize:20}}>✓</span><div><div style={{fontSize:13,color:"#2ECC71",fontWeight:800}}>GPS — Halt bestätigt</div><div style={{fontSize:12,color:"#aaa"}}>{gpsBanner}</div></div></div>}
-    <LSButton/>
+    {gpsBanner&&(()=>{const bg={ok:"#1a3a2a",gps:"#1a3a2a",warn:"#3a2a1a",check:"#1a2a3a"}[gpsBanner.kind]||"#1a3a2a";const bc={ok:"#2ECC71",gps:"#2ECC71",warn:"#F39C12",check:"#3498DB"}[gpsBanner.kind]||"#2ECC71";const ic={ok:"✓",gps:"📡",warn:"⚠️",check:"⏳"}[gpsBanner.kind]||"✓";const tl={ok:"Halt bestätigt",gps:"GPS — Halt erkannt",warn:"Achtung",check:"Prüfe Standort"}[gpsBanner.kind]||"Halt bestätigt";return <div style={{position:"fixed",top:80,left:"50%",transform:"translateX(-50%)",background:bg,border:"2px solid "+bc,borderRadius:16,padding:"12px 20px",display:"flex",alignItems:"center",gap:10,zIndex:100,animation:"slideUp .3s ease",maxWidth:340}}><span style={{fontSize:20}}>{ic}</span><div><div style={{fontSize:13,color:bc,fontWeight:800}}>{tl}</div><div style={{fontSize:12,color:"#ddd"}}>{gpsBanner.text}</div></div></div>;})()}
+    <LSButton driver={driver?.name}/>
   </div>;
 
   const fGroups=groupByKW(futureDays);
@@ -272,8 +457,8 @@ function FahrerApp({driver,onLogout}){
         {showArchiv&&<div style={{marginTop:10,animation:"fadeUp .2s ease"}}>{Object.entries(pGroups).map(([kw,dks])=><div key={kw} style={{marginBottom:8}}><div style={{fontSize:10,color:"#333",letterSpacing:2,marginBottom:4}}>{kw}</div>{dks.map(dk=><DayCard key={dk} dk={dk}/>)}</div>)}</div>}
       </div>}
     </div>
-    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:520,background:"#0d1520",borderTop:"1px solid rgba(255,255,255,.08)",padding:"12px 20px 28px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:12,color:"#555"}}>{driver.name}</div><button onClick={onLogout} style={{background:"transparent",border:"none",color:"#444",fontSize:12,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>Abmelden</button></div>
-    <LSButton/>
+    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:520,background:"#0d1520",borderTop:"1px solid rgba(255,255,255,.08)",padding:"12px 20px 28px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:12,color:"#555"}}>{driver.name}</div><button onClick={()=>{logEvent("logout",driver.name,{});onLogout();}} style={{background:"transparent",border:"none",color:"#444",fontSize:12,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>Abmelden</button></div>
+    <LSButton driver={driver?.name}/>
   </div>;
 
   // ─── FENSTER B — TAGESANSICHT ───
@@ -292,49 +477,24 @@ function FahrerApp({driver,onLogout}){
       <div style={{position:"relative"}}>
         {!dayIsToday&&plan?.dienst!=="FREI"&&<div style={{position:"absolute",inset:0,zIndex:5,background:"rgba(11,15,26,.55)",backdropFilter:"blur(1.5px)",borderRadius:16}}/>}
         {plan?.anfahrt&&<button onClick={dayIsToday?()=>setPhase("anfahrt"):undefined} disabled={!dayIsToday} style={{width:"100%",display:"flex",alignItems:"center",gap:14,background:todayAnfahrt?"rgba(46,204,113,.06)":"rgba(232,200,74,.08)",border:todayAnfahrt?"1px solid rgba(46,204,113,.2)":"2px solid rgba(232,200,74,.3)",borderRadius:16,padding:"14px 18px",cursor:dayIsToday?"pointer":"default",marginBottom:10,textAlign:"left"}}><div style={{width:36,height:36,borderRadius:"50%",background:todayAnfahrt?"#2ECC71":"#E8C84A",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0,color:"#fff"}}>{todayAnfahrt?"✓":"▶"}</div><div style={{flex:1}}><div style={{fontSize:12,color:todayAnfahrt?"#2ECC71":"#E8C84A",fontWeight:800,textTransform:"uppercase",letterSpacing:1}}>Anfahrt · Bus abholen</div><div style={{fontSize:15,color:"#fff",fontWeight:700,marginTop:2}}>{plan.anfahrt.ziel}</div></div>{dayIsToday&&plan.anfahrt.stopId&&<NavBtn stop={getStop(plan.anfahrt.stopId)} small/>}</button>}
-        {touren.map((t,i)=>{const status=getTourStatus(t,i);const archived=status==="archiv",done=status==="done",active=status==="active",locked=status==="locked";return <button key={t.id} disabled={locked||archived} onClick={()=>{if(active||done){setActiveIdx(i);setStopIdx(0);setPhase("tour");}}} style={{width:"100%",display:"flex",alignItems:"flex-start",gap:14,background:done||archived?"rgba(46,204,113,.04)":active?"rgba(232,200,74,.08)":"rgba(255,255,255,.02)",border:done||archived?"1px solid rgba(46,204,113,.15)":active?"2px solid rgba(232,200,74,.3)":"1px solid rgba(255,255,255,.04)",borderRadius:16,padding:"14px 18px",cursor:locked||archived?"default":"pointer",marginBottom:10,textAlign:"left",opacity:locked?.4:archived?.7:1}}><div style={{width:36,height:36,borderRadius:"50%",background:done||archived?"#2ECC71":active?"#E8C84A":"rgba(255,255,255,.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0,color:done||archived?"#fff":active?"#0B0F1A":"#555",marginTop:2}}>{done||archived?"✓":active?"▶":"🔒"}</div><div style={{flex:1}}><div style={{fontSize:15,color:done||archived?"#2ECC71":active?"#fff":"#888",fontWeight:800}}>{t.label}</div><div style={{fontSize:13,color:"#555",marginTop:2}}>{t.dep} – {t.arr}</div>{t.note&&<div style={{fontSize:12,color:"#F39C12",marginTop:4}}>{t.note}</div>}{(active||done||archived)&&t.stops.length>1&&<div style={{marginTop:10,display:"flex",flexDirection:"column",gap:5}}>{t.stops.map((s,si)=>{const st=getStop(s.id);return(<div key={si} style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:11,color:"#444",width:36,flexShrink:0}}>{s.t}</span><span style={{fontSize:12,color:done||archived?"#555":"#C0CAD8",flex:1}}>{st.name||st.short||"—"}</span>{!done&&!archived&&st?.lat&&<NavBtn stop={st} small/>}</div>);})}</div>}</div>{active&&<div style={{fontSize:11,color:"#E8C84A",fontWeight:800,background:"rgba(232,200,74,.15)",borderRadius:8,padding:"3px 8px",flexShrink:0}}>JETZT</div>}</button>;})}
+        {touren.map((t,i)=>{const status=getTourStatus(t,i);const archived=status==="archiv",done=status==="done",active=status==="active",locked=status==="locked";return <button key={t.id} disabled={locked||archived} onClick={()=>{if(active||done){if(active)logEvent("tour_gestartet",driver.name,{datum:activeDayKey,tour:t.id,tourLabel:t.label,sollAbfahrt:t.dep,istZeit:new Date().toLocaleTimeString("de-DE")});setActiveIdx(i);setStopIdx(0);setPhase("tour");}}} style={{width:"100%",display:"flex",alignItems:"flex-start",gap:14,background:done||archived?"rgba(46,204,113,.04)":active?"rgba(232,200,74,.08)":"rgba(255,255,255,.02)",border:done||archived?"1px solid rgba(46,204,113,.15)":active?"2px solid rgba(232,200,74,.3)":"1px solid rgba(255,255,255,.04)",borderRadius:16,padding:"14px 18px",cursor:locked||archived?"default":"pointer",marginBottom:10,textAlign:"left",opacity:locked?.4:archived?.7:1}}><div style={{width:36,height:36,borderRadius:"50%",background:done||archived?"#2ECC71":active?"#E8C84A":"rgba(255,255,255,.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0,color:done||archived?"#fff":active?"#0B0F1A":"#555",marginTop:2}}>{done||archived?"✓":active?"▶":"🔒"}</div><div style={{flex:1}}><div style={{fontSize:15,color:done||archived?"#2ECC71":active?"#fff":"#888",fontWeight:800}}>{t.label}</div><div style={{fontSize:13,color:"#555",marginTop:2}}>{t.dep} – {t.arr}</div>{t.note&&<div style={{fontSize:12,color:"#F39C12",marginTop:4}}>{t.note}</div>}{(active||done||archived)&&t.stops.length>1&&<div style={{marginTop:10,display:"flex",flexDirection:"column",gap:5}}>{t.stops.map((s,si)=>{const st=getStop(s.id);return(<div key={si} style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:13,color:"#E8C84A",fontWeight:800,width:46,flexShrink:0,fontFamily:"'Bebas Neue',sans-serif",letterSpacing:1}}>{s.t}</span><span style={{fontSize:12,color:done||archived?"#888":"#C0CAD8",flex:1}}>{st.name||st.short||"—"}</span>{!done&&!archived&&st?.lat&&<NavBtn stop={st} small/>}</div>);})}</div>}</div>{active&&<div style={{fontSize:11,color:"#E8C84A",fontWeight:800,background:"rgba(232,200,74,.15)",borderRadius:8,padding:"3px 8px",flexShrink:0}}>JETZT</div>}</button>;})}
         {plan?.rueckfahrt&&<div style={{width:"100%",display:"flex",alignItems:"center",gap:14,background:"rgba(52,152,219,.06)",border:"1px solid rgba(52,152,219,.2)",borderRadius:16,padding:"14px 18px",marginBottom:10}}><div style={{width:36,height:36,borderRadius:"50%",background:"#3498DB",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0,color:"#fff"}}>🏁</div><div style={{flex:1}}><div style={{fontSize:12,color:"#3498DB",fontWeight:800,textTransform:"uppercase",letterSpacing:1}}>Rückfahrt</div><div style={{fontSize:15,color:"#fff",fontWeight:700,marginTop:2}}>{plan.rueckfahrt.ziel}</div></div><div style={{fontSize:12,color:"#555"}}>bis {plan.dienstende}</div></div>}
         {plan?.dienst!=="FREI"&&<div style={{marginTop:8}}>{SONDERMELDUNGEN.map(a=><div key={a.id} style={{background:"rgba(52,152,219,.08)",border:"1px solid rgba(52,152,219,.2)",borderRadius:12,padding:"10px 14px",marginBottom:8}}><div style={{fontWeight:800,fontSize:13,color:"#3498DB",marginBottom:3}}>{a.title}</div><div style={{fontSize:12,color:"#C0CAD8",lineHeight:1.5}}>{a.text}</div></div>)}</div>}
       </div>
       {plan?.dienst!=="FREI"&&<><button onClick={()=>setShowQ(!showQ)} style={{width:"100%",marginTop:8,padding:"14px 16px",borderRadius:14,background:"rgba(110,30,110,.15)",border:"1px solid rgba(110,30,110,.3)",color:"#C090C0",fontFamily:"'Nunito',sans-serif",fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>📋 Qualitätsanforderungen <span style={{marginLeft:"auto"}}>{showQ?"▲":"▼"}</span></button>
       {showQ&&<div style={{marginTop:8,animation:"fadeUp .2s ease"}}>{POENALE.map((p,i)=><div key={i} style={{background:`rgba(${p.sev==="high"?"231,76,60":p.sev==="medium"?"243,156,18":"46,204,113"},.06)`,border:`1px solid rgba(${p.sev==="high"?"231,76,60":p.sev==="medium"?"243,156,18":"46,204,113"},.2)`,borderLeft:`4px solid ${p.sev==="high"?"#E74C3C":p.sev==="medium"?"#F39C12":"#2ECC71"}`,borderRadius:10,padding:"10px 14px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:13,fontWeight:700,color:"#fff"}}>{p.rule}</div><div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:26,color:p.sev==="high"?"#E74C3C":p.sev==="medium"?"#F39C12":"#2ECC71",flexShrink:0}}>{p.amount}€</div></div>)}</div>}</>}
     </div>
-    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:520,background:"#0d1520",borderTop:"1px solid rgba(255,255,255,.08)",padding:"12px 20px 28px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:12,color:"#555"}}>{driver.name} · {plan?.fahrzeug||driver.bus}</div><button onClick={onLogout} style={{background:"transparent",border:"none",color:"#444",fontSize:12,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>Abmelden</button></div>
-    {gpsBanner&&<div style={{position:"fixed",top:80,left:"50%",transform:"translateX(-50%)",background:"#1a3a2a",border:"2px solid #2ECC71",borderRadius:16,padding:"12px 20px",display:"flex",alignItems:"center",gap:10,zIndex:100,animation:"slideUp .3s ease",maxWidth:340}}><span style={{fontSize:20}}>✓</span><div><div style={{fontSize:13,color:"#2ECC71",fontWeight:800}}>GPS — Angekommen</div><div style={{fontSize:12,color:"#aaa"}}>{gpsBanner}</div></div></div>}
-    <LSButton/>
+    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:520,background:"#0d1520",borderTop:"1px solid rgba(255,255,255,.08)",padding:"12px 20px 28px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:12,color:"#555"}}>{driver.name} · {plan?.fahrzeug||driver.bus}</div><button onClick={()=>{logEvent("logout",driver.name,{});onLogout();}} style={{background:"transparent",border:"none",color:"#444",fontSize:12,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>Abmelden</button></div>
+    {gpsBanner&&(()=>{const bg={ok:"#1a3a2a",gps:"#1a3a2a",warn:"#3a2a1a",check:"#1a2a3a"}[gpsBanner.kind]||"#1a3a2a";const bc={ok:"#2ECC71",gps:"#2ECC71",warn:"#F39C12",check:"#3498DB"}[gpsBanner.kind]||"#2ECC71";const ic={ok:"✓",gps:"📡",warn:"⚠️",check:"⏳"}[gpsBanner.kind]||"✓";const tl={ok:"Halt bestätigt",gps:"GPS — Angekommen",warn:"Achtung",check:"Prüfe Standort"}[gpsBanner.kind]||"Bestätigt";return <div style={{position:"fixed",top:80,left:"50%",transform:"translateX(-50%)",background:bg,border:"2px solid "+bc,borderRadius:16,padding:"12px 20px",display:"flex",alignItems:"center",gap:10,zIndex:100,animation:"slideUp .3s ease",maxWidth:340}}><span style={{fontSize:20}}>{ic}</span><div><div style={{fontSize:13,color:bc,fontWeight:800}}>{tl}</div><div style={{fontSize:12,color:"#ddd"}}>{gpsBanner.text}</div></div></div>;})()}
+    <LSButton driver={driver?.name}/>
   </div>;
 }
 
-function DisponentApp({onLogout}){
-  const[time,setTime]=useState(new Date());
-  const[tab,setTab]=useState("live");
-  const[alerts,setAlerts]=useState(SONDERMELDUNGEN);
-  const[newMsg,setNewMsg]=useState({title:"",text:""});
-  const[lsLog]=useState([{fahrer:"Gerhard Geschwinder",bus:"ED DB 74",time:"06:31",pos:"Zwischen Grub und Heimstetten"}]);
-  const today=todayStr();
-  useEffect(()=>{const x=setInterval(()=>setTime(new Date()),1000);return()=>clearInterval(x);},[]);
-  const TABS=[["live","🗺️","Live"],["touren","🚌","Touren"],["meldungen","⚠️","Meldungen"],["leitstelle","📞","Leitstelle"]];
-  return <div style={{fontFamily:"'Nunito',sans-serif",background:"#f0f4f8",minHeight:"100vh",maxWidth:960,margin:"0 auto"}}>
-    <style>{FONTS}</style>
-    <div style={{background:"linear-gradient(135deg,#1a2a4a,#0d1b33)",padding:"14px 24px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-      <div><div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:26,color:"#E8C84A",letterSpacing:3}}>SEV CONNECT · DISPONENT</div><div style={{fontSize:11,color:"#4a6fa5",letterSpacing:1,textTransform:"uppercase"}}>KW21–22 · v4.9</div></div>
-      <div style={{display:"flex",alignItems:"center",gap:16}}><div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:24,color:"#E8C84A",letterSpacing:3}}>{time.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}</div><button onClick={onLogout} style={{background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.15)",borderRadius:10,padding:"6px 14px",color:"#aaa",fontSize:12,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>Abmelden</button></div>
-    </div>
-    <div style={{background:"#fff",borderBottom:"2px solid #e8ecf0",display:"flex"}}>{TABS.map(([id,ic,lb])=><button key={id} onClick={()=>setTab(id)} style={{flex:1,padding:"12px 6px",border:"none",background:"transparent",borderBottom:tab===id?"3px solid #1a6fb5":"3px solid transparent",color:tab===id?"#1a6fb5":"#888",fontFamily:"'Nunito',sans-serif",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>{ic} {lb}</button>)}</div>
-    <div style={{padding:20}}>
-      {tab==="live"&&<div><div style={{fontSize:13,color:"#999",textTransform:"uppercase",letterSpacing:1,marginBottom:16}}>Live Status</div>{DRIVERS.map(d=>{const plans=DIENSTPLAENE[d.name]||{};const plan=plans[today];const isActive=plan?.touren?.length>0;return(<div key={d.id} style={{background:"#fff",border:"1px solid #e8ecf0",borderLeft:`4px solid ${isActive?"#2ECC71":"#ccc"}`,borderRadius:14,padding:"14px 18px",marginBottom:10,display:"flex",alignItems:"center",gap:14}}><div style={{width:44,height:44,borderRadius:"50%",background:"#6E1E6E",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Bebas Neue',sans-serif",fontSize:16,color:"#E8C84A",flexShrink:0}}>{d.avatar}</div><div style={{flex:1}}><div style={{fontWeight:800,fontSize:15}}>{d.name}</div><div style={{fontSize:12,color:"#999",marginTop:2}}>{plan?.fahrzeug||d.bus} · {plan?.dienst||"—"}{plan?.code?` · ${plan.code}`:""}</div>{isActive?<div style={{fontSize:12,color:"#2ECC71",marginTop:2}}>● Aktiv · {plan.dienstbeginn}–{plan.dienstende}</div>:<div style={{fontSize:12,color:"#bbb",marginTop:2}}>Kein Dienst heute</div>}</div><button onClick={()=>window.open(`tel:+${d.tel}`,"_blank")} style={{background:"#3498DB",border:"none",borderRadius:10,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:16}}>📞</button><button onClick={()=>window.open(`https://wa.me/${d.tel}`,"_blank")} style={{background:"#25D366",border:"none",borderRadius:10,padding:"8px 12px",color:"#fff",cursor:"pointer",fontSize:16}}>💬</button></div>);})}</div>}
-      {tab==="touren"&&<div><div style={{fontSize:13,color:"#999",textTransform:"uppercase",letterSpacing:1,marginBottom:16}}>Fahraufträge heute</div>{Object.entries(DIENSTPLAENE).map(([name,plans])=>{const plan=plans[today];if(!plan)return null;return(<div key={name} style={{background:"#fff",border:"1px solid #e8ecf0",borderRadius:14,padding:"14px 18px",marginBottom:16}}><div style={{fontWeight:800,fontSize:15,marginBottom:4,color:"#1a2a4a"}}>{name}</div><div style={{fontSize:12,color:"#888",marginBottom:10}}>{plan.fahrzeug} · {plan.dienst}{plan.code?` · ${plan.code}`:""}</div>{plan.touren.map((t,i)=><div key={t.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<plan.touren.length-1?"1px solid #f5f5f5":"none"}}><div style={{width:28,height:28,borderRadius:"50%",background:"#f0f4f8",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#6E1E6E",flexShrink:0}}>{i+1}</div><div style={{flex:1,fontSize:13}}><span style={{fontWeight:700}}>{t.label}</span><span style={{color:"#999",marginLeft:8}}>{t.dep}–{t.arr}</span></div></div>)}{plan.touren.length===0&&<div style={{fontSize:13,color:"#bbb"}}>Kein Dienst heute</div>}</div>);})}</div>}
-      {tab==="meldungen"&&<div><div style={{background:"#fff",border:"2px solid #1a6fb5",borderRadius:16,padding:20,marginBottom:16}}><input value={newMsg.title} onChange={e=>setNewMsg(p=>({...p,title:e.target.value}))} placeholder="Titel..." style={{width:"100%",padding:"10px 14px",borderRadius:10,border:"2px solid #e8ecf0",fontSize:14,fontFamily:"'Nunito',sans-serif",background:"#f8fafc",outline:"none",marginBottom:10}}/><textarea value={newMsg.text} onChange={e=>setNewMsg(p=>({...p,text:e.target.value}))} placeholder="Details..." rows={3} style={{width:"100%",padding:"10px 14px",borderRadius:10,border:"2px solid #e8ecf0",fontSize:14,fontFamily:"'Nunito',sans-serif",background:"#f8fafc",outline:"none",resize:"vertical",marginBottom:12}}/><button onClick={()=>{if(!newMsg.title)return;setAlerts(p=>[{id:Date.now(),type:"warn",title:newMsg.title,text:newMsg.text,isNew:true},...p]);setNewMsg({title:"",text:""});}} style={{width:"100%",background:"#1a6fb5",border:"none",borderRadius:12,padding:"14px",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>🔴 Meldung senden</button></div>{alerts.map(a=><div key={a.id} style={{background:"#fff",border:"1px solid #e8ecf0",borderLeft:`4px solid ${a.type==="warn"?"#F39C12":"#3498DB"}`,borderRadius:14,padding:"14px 18px",marginBottom:10}}><div style={{fontWeight:800,fontSize:14,color:a.type==="warn"?"#F39C12":"#3498DB",marginBottom:4}}>{a.title}</div><div style={{fontSize:13,color:"#777"}}>{a.text}</div></div>)}</div>}
-      {tab==="leitstelle"&&<div><div style={{background:"#fff",border:"2px solid #E74C3C",borderRadius:16,padding:20,marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontWeight:800,fontSize:16}}>Leitstelle</div><div style={{fontSize:14,color:"#2ECC71",marginTop:2}}>● 24/7 · 089 55164 120</div><div style={{fontSize:11,color:"#bbb",marginTop:2}}>Nummer nicht an Dritte weitergeben</div></div><button onClick={callLS} style={{background:"#E74C3C",border:"none",borderRadius:14,padding:"14px 20px",color:"#fff",fontSize:20,cursor:"pointer"}}>📞</button></div>{lsLog.map((l,i)=><div key={i} style={{background:"#fff",border:"1px solid #e8ecf0",borderLeft:"4px solid #E74C3C",borderRadius:14,padding:"14px 18px",marginBottom:10}}><div style={{fontWeight:800,fontSize:14,color:"#E74C3C",marginBottom:4}}>🔴 {l.fahrer} · {l.bus}</div><div style={{fontSize:13,color:"#777"}}>{l.time} Uhr · {l.pos}</div></div>)}</div>}
-    </div>
-  </div>;
-}
 
 export default function App(){
   const[view,setView]=useState("login"),[driver,setDriver]=useState(null);
   return <div><style>{FONTS}</style>
-    {view==="login"&&<Login onDriver={d=>{setDriver(d);setView("driver");}} onDispatch={()=>setView("dispatch")}/>}
+    {view==="login"&&<Login onDriver={d=>{setDriver(d);setView("driver");}}/>}
     {view==="driver"&&<FahrerApp driver={driver} onLogout={()=>setView("login")}/>}
-    {view==="dispatch"&&<DisponentApp onLogout={()=>setView("login")}/>}
   </div>;
 }
