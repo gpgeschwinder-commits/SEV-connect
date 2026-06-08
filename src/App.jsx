@@ -280,7 +280,8 @@ function FahrerApp({driver,onLogout}){
   const[showQ,setShowQ]=useState(false);
   const[showArchiv,setShowArchiv]=useState(false);
   const[showTourDone,setShowTourDone]=useState(false);
-  const wRef=useRef(null),tRef=useRef(null);
+  const wRef=useRef(null),tRef=useRef(null),lastGpsRef=useRef(null);
+  const phaseRef=useRef(),planRef=useRef(),curStopRef=useRef(),dayKeyRef=useRef();
   useEffect(()=>{try{const s=localStorage.getItem("sev46_"+driver.name);if(s){const d=JSON.parse(s);setDoneTours(d.doneTours||{});setAnfahrtDone(d.anfahrtDone||{});}}catch(e){}},[driver.name]);
   useEffect(()=>{try{localStorage.setItem("sev46_"+driver.name,JSON.stringify({doneTours,anfahrtDone}));}catch(e){}},[doneTours,anfahrtDone,driver.name]);
   useEffect(()=>{const x=setInterval(()=>setTime(new Date()),1000);return()=>clearInterval(x);},[]);
@@ -289,9 +290,39 @@ function FahrerApp({driver,onLogout}){
   const activeTour=touren[activeIdx];
   const curTourStop=activeTour?.stops[stopIdx];
   const curStop=curTourStop?getStop(curTourStop.id):null;
+  useEffect(()=>{phaseRef.current=phase;},[phase]);
+  useEffect(()=>{planRef.current=plan;},[plan]);
+  useEffect(()=>{curStopRef.current=curStop;},[curStop]);
+  useEffect(()=>{dayKeyRef.current=activeDayKey;},[activeDayKey]);
   useEffect(()=>{if(!curTourStop||curTourStop.t?.startsWith("~"))return;setDelay(time.getHours()*60+time.getMinutes()-timeToMin(curTourStop.t));},[time,curTourStop]);
-  const startGPS=()=>{if(!navigator.geolocation)return;setGpsOn(true);wRef.current=navigator.geolocation.watchPosition(pos=>{const{latitude:la,longitude:lo}=pos.coords;if(phase==="anfahrt"&&plan?.anfahrt){const s=getStop(plan.anfahrt.stopId);if(s?.lat&&distM(la,lo,s.lat,s.lng)<GPS_RADIUS_M)handleAnfahrtDone();}else if(phase==="tour"&&curStop?.lat){if(distM(la,lo,curStop.lat,curStop.lng)<GPS_RADIUS_M)handleStopConfirm();}},()=>{},{enableHighAccuracy:true,maximumAge:3000,timeout:8000});};
-  const stopGPS=()=>{if(wRef.current)navigator.geolocation.clearWatch(wRef.current);setGpsOn(false);};
+  // GPS läuft permanent — startet automatisch beim Mount, fragt Berechtigung an
+  useEffect(()=>{
+    if(!navigator.geolocation){
+      setGpsBanner({text:"GPS nicht verfügbar — Gerät unterstützt keine Standortabfrage",kind:"warn"});
+      logEvent("gps_nicht_unterstuetzt",driver.name,{});
+      return;
+    }
+    logEvent("gps_start",driver.name,{datum:activeDayKey});
+    wRef.current=navigator.geolocation.watchPosition(pos=>{
+      lastGpsRef.current={lat:pos.coords.latitude,lng:pos.coords.longitude,acc:pos.coords.accuracy,ts:Date.now()};
+      if(!gpsOn){setGpsOn(true);setGpsBanner({text:"GPS aktiv · Genauigkeit ±"+Math.round(pos.coords.accuracy)+" m",kind:"ok"});}
+      const ph=phaseRef.current,pl=planRef.current,cs=curStopRef.current;
+      if(ph==="anfahrt"&&pl?.anfahrt){
+        const s=getStop(pl.anfahrt.stopId);
+        if(s?.lat&&distM(pos.coords.latitude,pos.coords.longitude,s.lat,s.lng)<GPS_RADIUS_M)handleAnfahrtDone();
+      }else if(ph==="tour"&&cs?.lat){
+        if(distM(pos.coords.latitude,pos.coords.longitude,cs.lat,cs.lng)<GPS_RADIUS_M)handleStopConfirm();
+      }
+    },err=>{
+      logEvent("gps_fehler",driver.name,{datum:dayKeyRef.current,fehler:err.message,code:err.code});
+      const txt=err.code===1?"GPS-Berechtigung verweigert — bitte in iOS-Einstellungen → Safari → Standort auf 'Erlauben' setzen":err.code===2?"GPS-Position nicht verfügbar":err.code===3?"GPS-Timeout — schlechter Empfang":"GPS-Fehler: "+err.message;
+      setGpsBanner({text:txt,kind:"warn"});
+      setGpsOn(false);
+    },{enableHighAccuracy:true,maximumAge:3000,timeout:15000});
+    return()=>{if(wRef.current)navigator.geolocation.clearWatch(wRef.current);};
+  // eslint-disable-next-line
+  },[]);
+  const stopGPS=()=>{};
   useEffect(()=>()=>{if(wRef.current)navigator.geolocation.clearWatch(wRef.current);},[]);
   const showBanner=(n,kind)=>{setGpsBanner({text:n,kind:kind||"gps"});clearTimeout(tRef.current);tRef.current=setTimeout(()=>setGpsBanner(null),4500);};
   const handleAnfahrtDone=()=>{
@@ -307,39 +338,19 @@ function FahrerApp({driver,onLogout}){
     setPhase("tag");
   };
   const advanceStop=()=>{if(stopIdx<activeTour.stops.length-1){setStopIdx(i=>i+1);}else{setShowTourDone(true);}};
-  // Automatische GPS-Bestätigung — Standort wurde im watchPosition geprüft
+  // Automatische GPS-Bestätigung (vom watchPosition aufgerufen)
   const handleStopConfirm=()=>{
     if(!activeTour)return;
     const tourStop=activeTour.stops[stopIdx];
     const stop=getStop(tourStop.id);
-    // GPS-Position abrufen für Log (watchPosition hat sie schon, aber wir loggen frisch)
-    if(navigator.geolocation){
-      navigator.geolocation.getCurrentPosition(pos=>{
-        const d=distM(pos.coords.latitude,pos.coords.longitude,stop.lat,stop.lng);
-        logEvent("halt_bestaetigt",driver.name,{
-          datum:activeDayKey,
-          tour:activeTour.id,
-          tourLabel:activeTour.label,
-          halt:stop.name,
-          haltId:stop.id,
-          sollZeit:tourStop.t,
-          istZeit:new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",second:"2-digit"}),
-          quelle:"gps_auto",
-          fahrerLat:pos.coords.latitude,
-          fahrerLng:pos.coords.longitude,
-          gpsGenauigkeit:Math.round(pos.coords.accuracy||0),
-          haltLat:stop.lat,
-          haltLng:stop.lng,
-          distanzM:Math.round(d)
-        });
-      },()=>{
-        logEvent("halt_bestaetigt",driver.name,{
-          datum:activeDayKey,tour:activeTour.id,halt:stop.name,haltId:stop.id,
-          sollZeit:tourStop.t,istZeit:new Date().toLocaleTimeString("de-DE"),
-          quelle:"gps_auto",hinweis:"Position für Log nicht abrufbar"
-        });
-      },{enableHighAccuracy:true,maximumAge:5000,timeout:5000});
+    const istZeit=new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+    const g=lastGpsRef.current;
+    const log={datum:activeDayKey,tour:activeTour.id,tourLabel:activeTour.label,halt:stop.name,haltId:stop.id,sollZeit:tourStop.t,istZeit,quelle:"gps_auto"};
+    if(g&&stop?.lat){
+      log.fahrerLat=g.lat;log.fahrerLng=g.lng;log.gpsGenauigkeit=Math.round(g.acc||0);
+      log.haltLat=stop.lat;log.haltLng=stop.lng;log.distanzM=Math.round(distM(g.lat,g.lng,stop.lat,stop.lng));
     }
+    logEvent("halt_bestaetigt",driver.name,log);
     showBanner(stop.name||"Halt","gps");
     advanceStop();
   };
@@ -349,39 +360,27 @@ function FahrerApp({driver,onLogout}){
     const tourStop=activeTour.stops[stopIdx];
     const stop=getStop(tourStop.id);
     const istZeit=new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+    const g=lastGpsRef.current;
+    if(!g){
+      logEvent("halt_bestaetigt",driver.name,{datum:activeDayKey,tour:activeTour.id,halt:stop.name,haltId:stop.id,sollZeit:tourStop.t,istZeit,quelle:"manuell_ohne_gps"});
+      showBanner((stop.name||"Halt")+" · ohne GPS bestätigt","warn");
+      advanceStop();return;
+    }
     if(!stop?.lat){
-      logEvent("halt_bestaetigt",driver.name,{datum:activeDayKey,tour:activeTour.id,halt:stop.name,haltId:stop.id,sollZeit:tourStop.t,istZeit,quelle:"manuell_ohne_koordinaten"});
+      logEvent("halt_bestaetigt",driver.name,{datum:activeDayKey,tour:activeTour.id,halt:stop.name,haltId:stop.id,sollZeit:tourStop.t,istZeit,quelle:"manuell_ohne_koordinaten",fahrerLat:g.lat,fahrerLng:g.lng,gpsGenauigkeit:Math.round(g.acc||0)});
       showBanner(stop.name||"Halt","manual");advanceStop();return;
     }
-    if(!navigator.geolocation){
-      logEvent("halt_bestaetigt",driver.name,{datum:activeDayKey,tour:activeTour.id,halt:stop.name,haltId:stop.id,sollZeit:tourStop.t,istZeit,quelle:"manuell_kein_gps"});
-      showBanner("GPS nicht verfügbar — "+(stop.name||"Halt"),"warn");advanceStop();return;
+    const d=distM(g.lat,g.lng,stop.lat,stop.lng);
+    const baseLog={datum:activeDayKey,tour:activeTour.id,tourLabel:activeTour.label,halt:stop.name,haltId:stop.id,sollZeit:tourStop.t,istZeit,fahrerLat:g.lat,fahrerLng:g.lng,gpsGenauigkeit:Math.round(g.acc||0),haltLat:stop.lat,haltLng:stop.lng,distanzM:Math.round(d),gpsAlterSek:Math.round((Date.now()-g.ts)/1000)};
+    if(d<GPS_RADIUS_M){
+      logEvent("halt_bestaetigt",driver.name,{...baseLog,quelle:"manuell_verifiziert"});
+      showBanner((stop.name||"Halt")+" · "+Math.round(d)+" m","ok");
+    }else{
+      const km=d>1000?(d/1000).toFixed(1)+" km":Math.round(d)+" m";
+      logEvent("halt_bestaetigt",driver.name,{...baseLog,quelle:"manuell_ausserhalb_radius",bestaetigtTrotzDistanz:true});
+      showBanner((stop.name||"Halt")+" · "+km+" entfernt — bestätigt","warn");
     }
-    showBanner("Standort wird geprüft…","check");
-    navigator.geolocation.getCurrentPosition(pos=>{
-      const d=distM(pos.coords.latitude,pos.coords.longitude,stop.lat,stop.lng);
-      const baseLog={
-        datum:activeDayKey,tour:activeTour.id,tourLabel:activeTour.label,
-        halt:stop.name,haltId:stop.id,sollZeit:tourStop.t,istZeit,
-        fahrerLat:pos.coords.latitude,fahrerLng:pos.coords.longitude,
-        gpsGenauigkeit:Math.round(pos.coords.accuracy||0),
-        haltLat:stop.lat,haltLng:stop.lng,distanzM:Math.round(d)
-      };
-      if(d<GPS_RADIUS_M){
-        logEvent("halt_bestaetigt",driver.name,{...baseLog,quelle:"manuell_verifiziert"});
-        showBanner((stop.name||"Halt")+" · "+Math.round(d)+" m","ok");
-        advanceStop();
-      }else{
-        const km=d>1000?(d/1000).toFixed(1)+" km":Math.round(d)+" m";
-        logEvent("halt_bestaetigt",driver.name,{...baseLog,quelle:"manuell_ausserhalb_radius",bestaetigtTrotzDistanz:true});
-        showBanner((stop.name||"Halt")+" · "+km+" entfernt — bestätigt","warn");
-        advanceStop();
-      }
-    },err=>{
-      logEvent("halt_bestaetigt",driver.name,{datum:activeDayKey,tour:activeTour.id,halt:stop.name,haltId:stop.id,sollZeit:tourStop.t,istZeit,quelle:"manuell_gps_fehler",fehler:err.message});
-      showBanner((stop.name||"Halt")+" · Standort nicht abrufbar — bestätigt","warn");
-      advanceStop();
-    },{enableHighAccuracy:true,maximumAge:0,timeout:10000});
+    advanceStop();
   };
   const handleTourAbgeschlossen=()=>{
     logEvent("tour_abgeschlossen",driver.name,{
@@ -430,7 +429,7 @@ function FahrerApp({driver,onLogout}){
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 20px",borderBottom:"1px solid rgba(255,255,255,.08)"}}>
         <button onClick={()=>setPhase("tag")} style={{background:"transparent",border:"none",color:"#C0CAD8",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>← Zurück</button>
         <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:24,color:"#E8C84A",letterSpacing:3}}>{time.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}</div>
-        <button onClick={gpsOn?stopGPS:startGPS} style={{background:gpsOn?"rgba(52,152,219,.2)":"rgba(255,255,255,.06)",border:`1px solid ${gpsOn?"#3498DB":"rgba(255,255,255,.15)"}`,borderRadius:10,padding:"6px 12px",color:gpsOn?"#3498DB":"#888",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Nunito',sans-serif",display:"flex",alignItems:"center",gap:5}}><span style={{animation:gpsOn?"gps 1.5s infinite":"none",display:"inline-block"}}>📡</span>{gpsOn?"GPS":"GPS an"}</button>
+        <div style={{background:gpsOn?"rgba(46,204,113,.15)":"rgba(231,76,60,.15)",border:`1px solid ${gpsOn?"#2ECC71":"#E74C3C"}`,borderRadius:10,padding:"6px 12px",color:gpsOn?"#2ECC71":"#E74C3C",fontSize:12,fontWeight:700,fontFamily:"'Nunito',sans-serif",display:"flex",alignItems:"center",gap:5}}><span style={{animation:gpsOn?"gps 1.5s infinite":"none",display:"inline-block"}}>📡</span>{gpsOn?"GPS":"Kein GPS"}</div>
       </div>
       <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:32,textAlign:"center"}}>
         <div style={{fontSize:13,color:"#666",textTransform:"uppercase",letterSpacing:3,marginBottom:16}}>ANFAHRT · BUS ABHOLEN</div>
@@ -448,7 +447,7 @@ function FahrerApp({driver,onLogout}){
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 20px",borderBottom:"1px solid rgba(255,255,255,.08)"}}>
       <button onClick={()=>setPhase("tag")} style={{background:"transparent",border:"none",color:"#C0CAD8",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>← Zurück</button>
       <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:24,color:"#E8C84A",letterSpacing:3}}>{time.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}</div>
-      <button onClick={gpsOn?stopGPS:startGPS} style={{background:gpsOn?"rgba(52,152,219,.2)":"rgba(255,255,255,.06)",border:`1px solid ${gpsOn?"#3498DB":"rgba(255,255,255,.15)"}`,borderRadius:10,padding:"6px 12px",color:gpsOn?"#3498DB":"#888",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Nunito',sans-serif",display:"flex",alignItems:"center",gap:5}}><span style={{animation:gpsOn?"gps 1.5s infinite":"none",display:"inline-block"}}>📡</span>{gpsOn?"GPS":"GPS an"}</button>
+      <div style={{background:gpsOn?"rgba(46,204,113,.15)":"rgba(231,76,60,.15)",border:`1px solid ${gpsOn?"#2ECC71":"#E74C3C"}`,borderRadius:10,padding:"6px 12px",color:gpsOn?"#2ECC71":"#E74C3C",fontSize:12,fontWeight:700,fontFamily:"'Nunito',sans-serif",display:"flex",alignItems:"center",gap:5}}><span style={{animation:gpsOn?"gps 1.5s infinite":"none",display:"inline-block"}}>📡</span>{gpsOn?"GPS":"Kein GPS"}</div>
     </div>
     <div style={{height:4,background:"rgba(255,255,255,.06)"}}><div style={{height:"100%",width:`${(stopIdx/Math.max(activeTour.stops.length-1,1))*100}%`,background:"linear-gradient(90deg,#6E1E6E,#E8C84A)",transition:"width .5s"}}/></div>
     <div style={{flex:1,display:"flex",flexDirection:"column",padding:"20px 20px 120px"}}>
